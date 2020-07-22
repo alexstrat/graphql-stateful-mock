@@ -12,11 +12,11 @@ const store = new MockStore({
   }
 });
 
-store.get('User', id);
+store.get('User', id, 'name');
 
-store.modify('User', id, { name: newName });
+store.modify('User', id, 'name', newName);
 
-store.getList('User', id, { defaultLength: 10 });
+// store.getList('User', id, { defaultLength: 10 });
 
 addMockToSchema({
   schema,

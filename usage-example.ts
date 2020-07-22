@@ -16,19 +16,24 @@ type Query {
 const schema = buildSchema(typeDefs);
 
 const store = new MockStore({
-  schema
+  schema,
+  mocks : {
+    User: {
+      // @ts-ignore
+      name: () => 'Supername',
+    }
+  }
 });
 
-console.log(store.get('User', 'fooo'));
+console.log(store.get('User', 'me', 'name'));
 
-store.get({
-  typeName: 'User'
-  id: 'foo',
-  fieldName: 'name',
-  arguments: {u: 1},
-})
-store.modify('User', 'fooo', { name: 'Alexandre'})
 
-console.log(store.get('User', 'fooo'));
 
-console.log(store.get('User', 'fobaroo'));
+store.modify('User', 'me', 'name', 'Alexandre');
+console.log(store.get('User', 'me', 'name'));
+console.log(store.get('User', 'other', 'name'));
+
+console.log(store.get('Query', 'ROOT', 'viewer'));
+
+// @ts-ignore
+console.log(store.store)
