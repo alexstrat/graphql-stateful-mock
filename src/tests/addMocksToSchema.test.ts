@@ -12,6 +12,10 @@ type Query {
   viewer: User!
   userById(id: ID!): User!
 }
+
+type Mutation {
+  changeViewerName(newName: String!): User!
+}
 `;
 
 const schema = buildSchema(typeDefs);
@@ -29,9 +33,9 @@ describe('addMocksToSchema', () => {
       `;
     const store = new MockStore({ schema });
 
-    const newSchema = addMocksToSchema({ schema, store });
+    const mockedSchema = addMocksToSchema({ schema, store });
     const { data, errors } = await graphql({
-      schema: newSchema,
+      schema: mockedSchema,
       source: query,
     });
 
@@ -43,11 +47,43 @@ describe('addMocksToSchema', () => {
     expect(typeof data!['viewer']['age']).toBe('number');
 
     const { data: data2 } = await graphql({
-      schema: newSchema,
+      schema: mockedSchema,
       source: query,
     });
 
     expect(data2!['viewer']['id']).toEqual(data!['viewer']['id']);
   });
 
+  it('mutations resolver', async () => {
+    const store = new MockStore({ schema });
+    const mockedSchema = addMocksToSchema({ schema, store, resolvers: {
+      Mutation: {
+        changeViewerName: (_, { newName }: { newName: string} ) => {
+          // @ts-ignore
+          const { $ref } = store.get('Query', 'ROOT', 'viewer');
+
+          store.modify('User', $ref, 'name', newName);
+          return store.get('Query', 'ROOT', 'viewer');
+        }
+      }
+    }});
+
+    const { data: data1 } = await graphql({
+      schema: mockedSchema,
+      source: `query { viewer { name }}`,
+    });
+
+    const { data: data2 } = await graphql({
+      schema: mockedSchema,
+      source: `mutation { changeViewerName(newName: "Alexandre") { name } }`,
+    });
+
+    const { data: data3 } = await graphql({
+      schema: mockedSchema,
+      source: `query { viewer { name }}`,
+    });
+
+    expect(data3!['viewer']['name']).toEqual('Alexandre');
+    expect(data3!['viewer']['name']).toEqual('Alexandre');
+  });
 });

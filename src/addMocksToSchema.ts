@@ -1,15 +1,16 @@
 import { MockStore } from './MockStore';
 import { GraphQLSchema, GraphQLFieldResolver, defaultFieldResolver, GraphQLObjectType } from 'graphql';
-import { mapSchema, MapperKind } from '@graphql-tools/utils';
+import { mapSchema, MapperKind, IResolvers } from '@graphql-tools/utils';
+import { addResolversToSchema } from '@graphql-tools/schema';
 
 type IMockOptions = {
   schema: GraphQLSchema,
   store: MockStore,
+  resolvers?: IResolvers,
 }
 // todo: add option to preserver resolver 
-// todo: add resolver option
 // todo: make optional passing store as option
-export function addMocksToSchema({ schema, store }: IMockOptions): GraphQLSchema {
+export function addMocksToSchema({ schema, store, resolvers }: IMockOptions): GraphQLSchema {
 
   const mockResolver:GraphQLFieldResolver<any, any> = (source, args, contex, info) => {
     if (source && typeof source === 'object' && typeof source['$ref'] === 'string') {
@@ -35,14 +36,16 @@ export function addMocksToSchema({ schema, store }: IMockOptions): GraphQLSchema
     return defaultFieldResolver(source, args, contex, info);
   }
 
- return mapSchema(schema, {
-   [MapperKind.OBJECT_FIELD]: (fieldConfig) => {
-     return {
-       ...fieldConfig,
-       resolve: mockResolver,
-     };
-    },
- });
+  const schemaWithMocks = mapSchema(schema, {
+    [MapperKind.OBJECT_FIELD]: (fieldConfig) => {
+      return {
+        ...fieldConfig,
+        resolve: mockResolver,
+      };
+      },
+  });
+
+  return resolvers ? addResolversToSchema(schemaWithMocks, resolvers) : schemaWithMocks;
 }
 
 

@@ -49,7 +49,8 @@ export class MockStore {
     typeName: string,
     key: string,
     fieldName: string,
-    args?: object
+    args?: object,
+    // defaultValue?: unknown todo
   ) {
     // invariant(variables, 'Not implemented');
 
