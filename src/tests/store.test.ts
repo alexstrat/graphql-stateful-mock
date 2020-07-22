@@ -22,7 +22,14 @@ describe('MockStore', () => {
     expect(store.get('User', '123', 'name')).toEqual('Hello World');
   });
 
-  it('should return the same value when called multiple time', () => {
+  it('should generate an id that matches key', () => {
+    const store = new MockStore({ schema });
+    store.get('User', '123', 'name');
+
+    expect(store.get('User', '123', 'id')).toEqual('123');
+  });
+
+  it('should return the same value when called multiple times', () => {
     const store = new MockStore({ schema });
     expect(store.get('User', '123', 'age')).toEqual(store.get('User', '123', 'age'));
 

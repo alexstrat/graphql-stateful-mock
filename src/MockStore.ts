@@ -25,9 +25,16 @@ const defaultMocks = {
   'ID': () => uuidv4(),
 }
 
+type TypePolicy = {
+  keyField?: string| false;
+};
+
 type MockStoreOptions = {
   schema: GraphQLSchema,
   mocks?: Mocks,
+  typePolicies?: {
+    [typeName: string]: TypePolicy
+  }
 }
 
 type Entity = {
@@ -37,12 +44,16 @@ type Entity = {
 export class MockStore {
   private schema: GraphQLSchema;
   private mocks: Mocks;
+  private typePolicies: {
+    [typeName: string]: TypePolicy
+  };
 
   private store: { [typeName: string]: { [key: string]: Entity } } = {};
 
-  constructor({ schema, mocks }:MockStoreOptions) {
+  constructor({ schema, mocks, typePolicies }:MockStoreOptions) {
     this.schema = schema;
     this.mocks = {...defaultMocks, ...mocks};
+    this.typePolicies = typePolicies || {};
   }
 
   get(
@@ -61,14 +72,26 @@ export class MockStore {
       ||
       this.store[typeName][key][fieldName] === undefined
     ) {
-      const value = this.generateFieldValue(typeName, fieldName);
+      let value;
+      if (this.isKeyField(typeName, fieldName)) {
+        value = key;
+      } else {
+        value = this.generateFieldValue(typeName, fieldName);
+      }
+
       this.modify(typeName, key, fieldName, value);
     }
 
     return this.store[typeName][key][fieldName];
   }
+ 
 
+  // todo: rename to set
   modify(typeName: string, key: string, fieldName: string, value: unknown) {
+    if (this.isKeyField(typeName, fieldName) && value !== key) {
+      throw new Error(`Field ${fieldName} is a key field of ${typeName} and you are trying to set it to ${value} while the key is ${key}`);
+    }
+
     if (this.store[typeName] === undefined) {
       this.store[typeName] = {};
     }
@@ -133,6 +156,15 @@ export class MockStore {
     }
 
     return getNullableType(field.type);
+  }
+
+  private isKeyField(typeName: string, fieldName: string) {
+    if (this.typePolicies[typeName] && this.typePolicies[typeName].keyField !== undefined) {
+      if (this.typePolicies[typeName].keyField === false) return false;
+      return this.typePolicies[typeName].keyField === fieldName;
+    }
+
+    return fieldName === 'id' || fieldName === '_id';
   }
 }
 
