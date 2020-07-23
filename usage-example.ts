@@ -29,7 +29,7 @@ console.log(store.get('User', 'me', 'name'));
 
 
 
-store.modify('User', 'me', 'name', 'Alexandre');
+store.set('User', 'me', 'name', 'Alexandre');
 console.log(store.get('User', 'me', 'name'));
 console.log(store.get('User', 'other', 'name'));
 

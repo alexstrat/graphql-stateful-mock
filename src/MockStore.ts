@@ -1,4 +1,4 @@
-import { GraphQLSchema, isObjectType, isScalarType, getNullableType } from 'graphql';
+import { GraphQLSchema, isObjectType, isScalarType, getNullableType, isListType, GraphQLOutputType } from 'graphql';
 import invariant from 'ts-invariant';
 
 function uuidv4() {
@@ -16,6 +16,9 @@ type Mocks = {
       |
       { [fieldName: string]: () => unknown}
 };
+
+// tooo: add configuration
+const randomListLength = () => Math.round(Math.random() * 10);
 
 const defaultMocks = {
   'Int': () => Math.round(Math.random() * 200) - 100,
@@ -79,15 +82,13 @@ export class MockStore {
         value = this.generateFieldValue(typeName, fieldName);
       }
 
-      this.modify(typeName, key, fieldName, value);
+      this.set(typeName, key, fieldName, value);
     }
 
     return this.store[typeName][key][fieldName];
   }
  
-
-  // todo: rename to set
-  modify(typeName: string, key: string, fieldName: string, value: unknown) {
+  set(typeName: string, key: string, fieldName: string, value: unknown) {
     if (this.isKeyField(typeName, fieldName) && value !== key) {
       throw new Error(`Field ${fieldName} is a key field of ${typeName} and you are trying to set it to ${value} while the key is ${key}`);
     }
@@ -127,22 +128,29 @@ export class MockStore {
     }
 
     if (value) return value;
+    
 
-    const fieldType = this.getNonNullableFieldType(typeName, fieldName);
-    if(isScalarType(fieldType)) {
-      invariant(typeof this.mocks[fieldType.name] === 'function', `No mock provided for type ${fieldType.name}`);
-      // @ts-ignore don't know
-      value = this.mocks[fieldType.name]();
-    } else if (isObjectType(fieldType)) {
-      value = { $ref: uuidv4() };
-    } else {
-      throw new Error(`${fieldType} not implemented`, );
-    }
-
-    return value;
+    const fieldType = this.getFieldType(typeName, fieldName);
+    return this.generateValueFromType(fieldType);
   }
 
-  private getNonNullableFieldType(typeName: string, fieldName: string) {
+  private generateValueFromType(fieldType: GraphQLOutputType): unknown {
+    const nullableType = getNullableType(fieldType);
+
+    if (isScalarType(nullableType)) {
+      invariant(typeof this.mocks[nullableType.name] === 'function', `No mock provided for type ${nullableType.name}`);
+      // @ts-ignore don't know
+      return this.mocks[nullableType.name]();
+    } else if (isObjectType(nullableType)) {
+      return { $ref: uuidv4() };
+    } else if (isListType(nullableType)) {
+      return [...new Array(randomListLength())].map(() => this.generateValueFromType(nullableType.ofType));
+    } else {
+      throw new Error(`${nullableType} not implemented`,);
+    }
+  }
+
+  private getFieldType(typeName: string, fieldName: string) {
     const type = this.schema.getType(typeName);
 
     if (!type || !isObjectType(type)) {
@@ -155,7 +163,8 @@ export class MockStore {
       throw new Error(`${fieldName} does not exist on type ${typeName}`);
     }
 
-    return getNullableType(field.type);
+
+    return field.type;
   }
 
   private isKeyField(typeName: string, fieldName: string) {

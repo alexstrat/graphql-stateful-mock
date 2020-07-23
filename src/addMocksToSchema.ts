@@ -1,7 +1,8 @@
-import { MockStore } from './MockStore';
 import { GraphQLSchema, GraphQLFieldResolver, defaultFieldResolver, GraphQLObjectType } from 'graphql';
 import { mapSchema, MapperKind, IResolvers } from '@graphql-tools/utils';
 import { addResolversToSchema } from '@graphql-tools/schema';
+import { MockStore } from './MockStore';
+import { isRef } from './types';
 
 type IMockOptions = {
   schema: GraphQLSchema,
@@ -13,10 +14,10 @@ type IMockOptions = {
 export function addMocksToSchema({ schema, store, resolvers }: IMockOptions): GraphQLSchema {
 
   const mockResolver:GraphQLFieldResolver<any, any> = (source, args, contex, info) => {
-    if (source && typeof source === 'object' && typeof source['$ref'] === 'string') {
+    if (isRef(source)) {
       return store.get(
         info.parentType.name,
-        source['$ref'],
+        source.$ref,
         info.fieldName,
         args
       )

@@ -1,5 +1,5 @@
 import { buildSchema, graphql } from 'graphql';
-import { MockStore, addMocksToSchema } from '..';
+import { MockStore, addMocksToSchema, assertIsRef } from '..';
 
 const typeDefs = `
 type User {
@@ -59,10 +59,10 @@ describe('addMocksToSchema', () => {
     const mockedSchema = addMocksToSchema({ schema, store, resolvers: {
       Mutation: {
         changeViewerName: (_, { newName }: { newName: string} ) => {
-          // @ts-ignore
-          const { $ref } = store.get('Query', 'ROOT', 'viewer');
+          const viewer = store.get('Query', 'ROOT', 'viewer');
+          assertIsRef(viewer);
 
-          store.modify('User', $ref, 'name', newName);
+          store.set('User', viewer.$ref, 'name', newName);
           return store.get('Query', 'ROOT', 'viewer');
         }
       }

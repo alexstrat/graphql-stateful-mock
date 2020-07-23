@@ -6,6 +6,9 @@ type User {
   id: ID!
   age: Int!
   name: String!
+  surnames: [String!]!
+
+  friends: [User!]!
 }
 
 type Query {
@@ -51,4 +54,23 @@ describe('MockStore', () => {
     const value = store.get('Query', 'ROOT', 'viewer');
     expect(value).toHaveProperty('$ref');
   });
+
+  it('should be able to generate a list of scalar types', () => {
+    const store = new MockStore({ schema });
+    const surnames = store.get('User', '123', 'surnames');
+
+    expect(surnames).toBeInstanceOf(Array);
+    //@ts-ignore
+    expect(typeof surnames[0]).toBe('string');
+  });
+
+
+  it('should be able to generate a list of Object type', () => {
+    const store = new MockStore({ schema });
+    const friends = store.get('User', '123', 'friends');
+
+    expect(friends).toBeInstanceOf(Array);
+    //@ts-ignore
+    expect(friends[0]).toHaveProperty('$ref');
+  })
 });
