@@ -1,39 +1,16 @@
 import { GraphQLSchema, isObjectType, isScalarType, getNullableType, isListType, GraphQLOutputType } from 'graphql';
-import invariant from 'ts-invariant';
 import { assertIsDefined, isDefined } from 'ts-is-defined';
 import stringify from 'fast-json-stable-stringify';
 
-import { IMockStore, GetArgs, SetArgs, isRef, assertIsRef, Ref, isRecord } from './types';
-import { uuidv4 } from './utils';
+import { IMockStore, GetArgs, SetArgs, isRef, assertIsRef, Ref, isRecord, MockStoreOptions, TypePolicy, Mocks } from './types';
+import { uuidv4, randomListLength } from './utils';
 
-type Mocks = {
-    [typeOrScalarName: string]:
-      (() => { [fieldName: string]: unknown } | unknown)
-      |
-      { [fieldName: string]: () => unknown}
-};
-
-// tooo: add configuration
-const randomListLength = () => Math.round(Math.random() * 10);
-
-const defaultMocks = {
+export const defaultMocks = {
   'Int': () => Math.round(Math.random() * 200) - 100,
   'Float': () => Math.random() * 200 - 100,
   'String': () => 'Hello World',
   'Boolean': () => Math.random() > 0.5,
   'ID': () => uuidv4(),
-}
-
-type TypePolicy = {
-  keyField?: string| false;
-};
-
-type MockStoreOptions = {
-  schema: GraphQLSchema,
-  mocks?: Mocks,
-  typePolicies?: {
-    [typeName: string]: TypePolicy
-  }
 }
 
 type Entity = {
@@ -49,7 +26,7 @@ export class MockStore implements IMockStore{
 
   private store: { [typeName: string]: { [key: string]: Entity } } = {};
 
-  constructor({ schema, mocks, typePolicies }:MockStoreOptions) {
+  constructor({ schema, mocks, typePolicies } : MockStoreOptions) {
     this.schema = schema;
     this.mocks = {...defaultMocks, ...mocks};
     this.typePolicies = typePolicies || {};

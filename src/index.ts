@@ -1,7 +1,3 @@
-export { MockStore } from './MockStore';
-export { addMocksToSchema } from './addMocksToSchema';
-export {
-  isRef,
-  assertIsRef,
-  Ref,
-} from './types';
+export * from './MockStore';
+export * from './addMocksToSchema';
+export * from './types';

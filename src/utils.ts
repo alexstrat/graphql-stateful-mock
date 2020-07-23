@@ -6,3 +6,5 @@ export function uuidv4() {
     return v.toString(16);
   });
 };
+
+export const randomListLength = () => Math.round(Math.random() * 10);

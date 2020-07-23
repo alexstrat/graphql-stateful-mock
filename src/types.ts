@@ -1,6 +1,27 @@
+import { GraphQLSchema } from 'graphql';
+
 export type Ref<KeyT = string> = {
   $ref: KeyT,
 };
+
+export type Mocks = {
+  [typeOrScalarName: string]:
+  (() => { [fieldName: string]: unknown } | unknown)
+  |
+  { [fieldName: string]: () => unknown }
+};
+
+export type TypePolicy = {
+  keyField?: string | false;
+};
+
+export type MockStoreOptions = {
+  schema: GraphQLSchema,
+  mocks?: Mocks,
+  typePolicies?: {
+    [typeName: string]: TypePolicy
+  }
+}
 
 export type GetArgs<KeyT = string> = {
   typeName: string,

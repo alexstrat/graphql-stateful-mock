@@ -27,7 +27,6 @@
     "@graphql-tools/schema": "^6.0.14",
     "@graphql-tools/utils": "^6.0.14",
     "fast-json-stable-stringify": "^2.1.0",
-    "ts-invariant": "^0.4.4",
     "ts-is-defined": "0.0.3"
   }
 }
