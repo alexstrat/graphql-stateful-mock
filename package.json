@@ -12,6 +12,7 @@
   "devDependencies": {
     "@types/chai": "^4.2.11",
     "@types/delay": "^3.1.0",
+    "@types/fast-json-stable-stringify": "^2.0.0",
     "@types/jest": "^25.2.1",
     "@types/node": "^13.13.4",
     "chai": "^4.2.0",
@@ -25,6 +26,7 @@
   "dependencies": {
     "@graphql-tools/schema": "^6.0.14",
     "@graphql-tools/utils": "^6.0.14",
+    "fast-json-stable-stringify": "^2.1.0",
     "ts-invariant": "^0.4.4",
     "ts-is-defined": "0.0.3"
   }

@@ -6,7 +6,7 @@ export type GetArgs = {
   typeName: string,
   key: string,
   fieldName: string,
-    // args?: object,
+  fieldArgs?: string | { [argName: string]: any },
     // defaultValue?: unknown todo
 }
 
@@ -14,6 +14,7 @@ export type SetArgs = {
   typeName: string,
   key: string,
   fieldName: string,
+  fieldArgs?: string | { [argName: string]: any },
   value?: unknown,
 }
 

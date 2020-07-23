@@ -1,6 +1,8 @@
 import { GraphQLSchema, isObjectType, isScalarType, getNullableType, isListType, GraphQLOutputType } from 'graphql';
 import invariant from 'ts-invariant';
 import { assertIsDefined } from 'ts-is-defined';
+import stringify from 'fast-json-stable-stringify';
+
 import { IMockStore, GetArgs, SetArgs } from './types';
 
 function uuidv4() {
@@ -81,14 +83,17 @@ export class MockStore implements IMockStore{
       args = _typeName;
     }
 
-    const { typeName, key, fieldName} = args;
+    const { typeName, key, fieldName, fieldArgs} = args;
+
+
+    let fieldNameInStore: string = getFieldNameInStore(fieldName, fieldArgs);
 
     if (
       this.store[typeName] === undefined
       ||
       this.store[typeName][key] === undefined
       ||
-      this.store[typeName][key][fieldName] === undefined
+      this.store[typeName][key][fieldNameInStore] === undefined
     ) {
       let value;
       if (this.isKeyField(typeName, fieldName)) {
@@ -97,10 +102,10 @@ export class MockStore implements IMockStore{
         value = this.generateFieldValue(typeName, fieldName);
       }
 
-      this.set(typeName, key, fieldName, value);
+      this.set({typeName, key, fieldName, fieldArgs, value});
     }
 
-    return this.store[typeName][key][fieldName];
+    return this.store[typeName][key][fieldNameInStore];
   }
  
   set(
@@ -125,7 +130,9 @@ export class MockStore implements IMockStore{
       args = _typeName;
     }
 
-    const { typeName, key, fieldName, value } = args;
+    const { typeName, key, fieldName, fieldArgs, value } = args;
+
+    let fieldNameInStore: string = getFieldNameInStore(fieldName, fieldArgs);
 
     if (this.isKeyField(typeName, fieldName) && value !== key) {
       throw new Error(`Field ${fieldName} is a key field of ${typeName} and you are trying to set it to ${value} while the key is ${key}`);
@@ -141,7 +148,7 @@ export class MockStore implements IMockStore{
 
     this.store[typeName][key] = {
       ...this.store[typeName][key],
-      [fieldName]: value,
+      [fieldNameInStore]: value,
     };
   }
 
@@ -215,3 +222,18 @@ export class MockStore implements IMockStore{
   }
 }
 
+
+const getFieldNameInStore = (fieldName: string, fieldArgs?: string | { [argName: string]: any }) => {
+  if (!fieldArgs) return fieldName;
+
+  if (typeof fieldArgs === 'string') {
+    return `${fieldName}:${fieldArgs}`;
+  }
+
+  // empty args
+  if (Object.keys(fieldArgs).length === 0) {
+    return fieldName;
+  }
+
+  return `${fieldName}:${stringify(fieldArgs)}`;
+};

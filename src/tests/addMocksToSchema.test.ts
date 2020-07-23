@@ -86,4 +86,31 @@ describe('addMocksToSchema', () => {
     expect(data3!['viewer']['name']).toEqual('Alexandre');
     expect(data3!['viewer']['name']).toEqual('Alexandre');
   });
+
+  it('should handle arguments', async () => {
+    const query = `
+      query {
+        user1: userById(id: "1") {
+          id
+          name
+        }
+        user2: userById(id: "2") {
+          id
+          name
+        }
+      }
+      `;
+    const store = new MockStore({ schema });
+
+    const mockedSchema = addMocksToSchema({ schema, store });
+    const { data, errors } = await graphql({
+      schema: mockedSchema,
+      source: query,
+    });
+
+
+    expect(errors).not.toBeDefined();
+    expect(data).toBeDefined();
+    expect(data!['user1']['id']).not.toEqual(data!['user2']['id']);
+  });
 });

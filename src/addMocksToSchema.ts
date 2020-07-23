@@ -15,21 +15,23 @@ export function addMocksToSchema({ schema, store, resolvers }: IMockOptions): Gr
 
   const mockResolver:GraphQLFieldResolver<any, any> = (source, args, contex, info) => {
     if (isRef(source)) {
-      return store.get(
-        info.parentType.name,
-        source.$ref,
-        info.fieldName,
-      )
+      return store.get({
+        typeName: info.parentType.name,
+        key: source.$ref,
+        fieldName: info.fieldName,
+        fieldArgs: args,
+      });
     }
 
     // we have to handle the root mutation and root query types differently,
     // because no resolver is called at the root
     if (isQueryOrMuationType(info.parentType, info.schema)) {
-      return store.get(
-        info.parentType.name,
-        'ROOT',
-        info.fieldName,
-      )
+      return store.get({
+        typeName: info.parentType.name,
+        key: 'ROOT',
+        fieldName: info.fieldName,
+        fieldArgs: args,
+      });
     }
 
     return defaultFieldResolver(source, args, contex, info);
