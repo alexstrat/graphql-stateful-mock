@@ -1,9 +1,9 @@
 import { GraphQLSchema, isObjectType, isScalarType, getNullableType, isListType, GraphQLOutputType } from 'graphql';
 import invariant from 'ts-invariant';
-import { assertIsDefined } from 'ts-is-defined';
+import { assertIsDefined, isDefined } from 'ts-is-defined';
 import stringify from 'fast-json-stable-stringify';
 
-import { IMockStore, GetArgs, SetArgs } from './types';
+import { IMockStore, GetArgs, SetArgs, isRef, assertIsRef, Ref } from './types';
 
 function uuidv4() {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
@@ -151,10 +151,61 @@ export class MockStore implements IMockStore{
       this.store[typeName][key] = {};
     }
 
+    let valueToStore: unknown;
+    const fieldType = getNullableType(this.getFieldType(typeName, fieldName));
+    
+    if (isObjectType(fieldType) && isDefined(value)) {
+      if (typeof value !== 'object') throw new Error(`Value to set for ${typeName}.${fieldName} should be an object or null or undefined`);
+      assertIsDefined(value, 'Should not be null at this point');
+      const joinedTypeName = fieldType.name;
+
+      // @ts-ignore
+      valueToStore = this.insert(joinedTypeName, value);
+    } else if (isListType(fieldType) && isObjectType(getNullableType(fieldType.ofType)) && isDefined(value)){
+      if (!Array.isArray(value)) throw new Error(`Value to set for ${typeName}.${fieldName} should be an array or null or undefined`);
+
+      const joinedTypeName = getNullableType(fieldType.ofType).name;
+
+      valueToStore = value.map((v, index) => {
+        if (!isDefined(v)) return v;
+        if (typeof v !== 'object') throw new Error(`Value to set for ${typeName}.${fieldName}[${index}] should be an object or null or undefined`);
+        return this.insert(joinedTypeName, v);
+      });
+    } else {
+      valueToStore = value;
+    }
+
     this.store[typeName][key] = {
       ...this.store[typeName][key],
-      [fieldNameInStore]: value,
+      [fieldNameInStore]: valueToStore,
     };
+  }
+
+  private insert(typeName: string, values: { [fieldName: string]: unknown}): Ref {
+    const keyFieldName = this.getKeyFieldName(typeName);
+
+    let key: string;
+    if (isRef(values)) {
+      key = values.$ref;
+    } else if (keyFieldName && keyFieldName in values) {
+      // @ts-ignore don't know
+      key = values[keyFieldName];
+    } else {
+      key = uuidv4();
+    }
+
+    for (const joinedFieldName of Object.keys(values)) {
+      if (joinedFieldName === '$ref') continue;
+      this.set(
+        typeName,
+        key,
+        joinedFieldName,
+        // @ts-ignore don't know
+        values[joinedFieldName]
+      );
+    };
+
+    return { $ref: key };
   }
 
   private generateFieldValue(
@@ -208,11 +259,7 @@ export class MockStore implements IMockStore{
   }
 
   private getFieldType(typeName: string, fieldName: string) {
-    const type = this.schema.getType(typeName);
-
-    if (!type || !isObjectType(type)) {
-      throw new Error(`${typeName} does not exist on schema or is not an object`);
-    }
+    const type = this.getType(typeName);
 
     const field = type.getFields()[fieldName];
 
@@ -224,13 +271,34 @@ export class MockStore implements IMockStore{
     return field.type;
   }
 
-  private isKeyField(typeName: string, fieldName: string) {
-    if (this.typePolicies[typeName] && this.typePolicies[typeName].keyField !== undefined) {
-      if (this.typePolicies[typeName].keyField === false) return false;
-      return this.typePolicies[typeName].keyField === fieldName;
+  private getType(typeName: string) {
+    const type = this.schema.getType(typeName);
+
+    if (!type || !isObjectType(type)) {
+      throw new Error(`${typeName} does not exist on schema or is not an object`);
     }
 
-    return fieldName === 'id' || fieldName === '_id';
+    return type;
+  }
+
+  private isKeyField(typeName: string, fieldName: string) {
+    return this.getKeyFieldName(typeName) === fieldName;
+  }
+
+  private getKeyFieldName(typeName: string): string | null {
+    const typePolicyKeyField = this.typePolicies[typeName]?.keyField;
+    if (typePolicyKeyField !== undefined) {
+      if (typePolicyKeyField === false) return null;
+      return typePolicyKeyField;
+    }
+
+    const gqlType = this.getType(typeName);
+    const fieldNames = Object.keys(gqlType.getFields());
+
+    if (fieldNames.includes('id')) return 'id';
+    if (fieldNames.includes('_id')) return '+id';
+
+    return null;
   }
 }
 

@@ -1,4 +1,4 @@
-type Ref = {
+export type Ref = {
   $ref: string,
 };
 

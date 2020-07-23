@@ -1,6 +1,6 @@
 import { buildSchema } from 'graphql';
 import { MockStore } from '..';
-import { assertIsRef } from '../types';
+import { assertIsRef, Ref } from '../types';
 
 const typeDefs = `
 type User {
@@ -160,5 +160,38 @@ describe('MockStore', () => {
     expect(friends).toBeInstanceOf(Array);
     //@ts-ignore
     expect(friends[0]).toHaveProperty('$ref');
+  });
+
+  it('should support nested set', () => {
+    const store = new MockStore({ schema });
+
+    store.set('Query', 'ROOT', 'viewer', {
+      id: 'me',
+      name: 'Alexandre',
+      age: 31,
+    });
+
+    expect(store.get('Query', 'ROOT', 'viewer')).toEqual({ $ref: 'me' });
+    expect(store.get('User', 'me', 'name')).toEqual('Alexandre');
+  });
+
+  it('should support nested set with list', () => {
+    const store = new MockStore({ schema });
+
+    store.set('User', 'me', 'friends', [
+      {
+        name: 'Ross'
+      }, {
+        name: 'Nico'
+      }, {
+        name: 'Trev'
+    }]);
+
+    const myFriendsRefs = store.get('User', 'me', 'friends') as Ref[];
+    expect(myFriendsRefs).toHaveLength(3);
+
+    const MyFriendsNames = myFriendsRefs.map(ref => store.get('User', ref.$ref, 'name')).sort();
+    expect(MyFriendsNames).toEqual(['Nico', 'Ross', 'Trev']);
+    
   });
 });
