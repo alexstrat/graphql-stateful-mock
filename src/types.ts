@@ -7,7 +7,6 @@ export type GetArgs = {
   key: string,
   fieldName: string,
   fieldArgs?: string | { [argName: string]: any },
-    // defaultValue?: unknown todo
 }
 
 export type SetArgs = {
@@ -16,6 +15,13 @@ export type SetArgs = {
   fieldName: string,
   fieldArgs?: string | { [argName: string]: any },
   value?: unknown,
+  /**
+   * If the value for this field is alreay set, it won't
+   * be overriden.
+   * 
+   * Propagates down do nested `set`.
+   */
+  noOverride?: boolean;
 }
 
 export interface IMockStore {

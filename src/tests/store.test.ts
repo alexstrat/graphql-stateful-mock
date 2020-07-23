@@ -137,6 +137,22 @@ describe('MockStore', () => {
     expect(store.get('User', '123', 'name')).toEqual(String.fromCharCode(age));
   })
 
+  it('should support nested mocks', () => {
+    const store = new MockStore({
+      schema,
+      mocks: {
+        User: {
+          friends: () => [{ age: 21 }, { age: 22 }]
+        }
+      }
+    });
+
+    const friendsRefs = store.get('User', '123', 'friends') as Ref[];
+    expect(friendsRefs).toHaveLength(2);
+    const friendsAges = friendsRefs.map(ref => store.get('User', ref.$ref, 'age')).sort();
+    expect(friendsAges).toEqual([21, 22]);
+  });
+
   it('should generate a ref when the field is a type', () => {
     const store = new MockStore({ schema });
     const value = store.get('Query', 'ROOT', 'viewer');

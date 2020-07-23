@@ -9,7 +9,7 @@ type IMockOptions = {
   store: MockStore,
   resolvers?: IResolvers,
 }
-// todo: add option to preserver resolver 
+// todo: add option to preserver resolver
 // todo: make optional passing store as option
 export function addMocksToSchema({ schema, store, resolvers }: IMockOptions): GraphQLSchema {
 

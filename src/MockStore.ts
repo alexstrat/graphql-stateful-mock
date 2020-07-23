@@ -67,6 +67,7 @@ export class MockStore implements IMockStore{
     _typeName: string | GetArgs,
     _key?: string,
     _fieldName?: string,
+    _fieldArgs?: string | { [argName: string]: any },
   ) {
 
     // agument normalization
@@ -78,6 +79,7 @@ export class MockStore implements IMockStore{
         typeName: _typeName,
         key: _key,
         fieldName: _fieldName,
+        fieldArgs: _fieldArgs,
       }
     } else {
       args = _typeName;
@@ -103,11 +105,11 @@ export class MockStore implements IMockStore{
           // if we get a key field in the mix we don't care
           if (this.isKeyField(typeName, otherFieldName)) return;
 
-          this.set(typeName, key, otherFieldName, otherValue);
+          this.set({ typeName, key, fieldName: otherFieldName, value: otherValue, noOverride: true });
         });
       }
 
-      this.set({typeName, key, fieldName, fieldArgs, value});
+      this.set({ typeName, key, fieldName, fieldArgs, value, noOverride: true});
     }
 
     return this.store[typeName][key][fieldNameInStore];
@@ -135,7 +137,7 @@ export class MockStore implements IMockStore{
       args = _typeName;
     }
 
-    const { typeName, key, fieldName, fieldArgs, value } = args;
+    const { typeName, key, fieldName, fieldArgs, value, noOverride } = args;
 
     let fieldNameInStore: string = getFieldNameInStore(fieldName, fieldArgs);
 
@@ -151,16 +153,22 @@ export class MockStore implements IMockStore{
       this.store[typeName][key] = {};
     }
 
+    // if already set and we don't ovveride
+    if (this.store[typeName][key][fieldNameInStore] !== undefined && noOverride) {
+      return;
+    }
+
     let valueToStore: unknown;
     const fieldType = getNullableType(this.getFieldType(typeName, fieldName));
     
+    // deal with nesting
     if (isObjectType(fieldType) && isDefined(value)) {
       if (typeof value !== 'object') throw new Error(`Value to set for ${typeName}.${fieldName} should be an object or null or undefined`);
       assertIsDefined(value, 'Should not be null at this point');
       const joinedTypeName = fieldType.name;
 
       // @ts-ignore
-      valueToStore = this.insert(joinedTypeName, value);
+      valueToStore = this.insert(joinedTypeName, value, noOverride);
     } else if (isListType(fieldType) && isObjectType(getNullableType(fieldType.ofType)) && isDefined(value)){
       if (!Array.isArray(value)) throw new Error(`Value to set for ${typeName}.${fieldName} should be an array or null or undefined`);
 
@@ -170,7 +178,7 @@ export class MockStore implements IMockStore{
         if (v === null) return null;
         if (v !== undefined && typeof v !== 'object' ) throw new Error(`Value to set for ${typeName}.${fieldName}[${index}] should be an object or null or undefined but got ${v}`);
         // if v is undefined (empty array slot) it means we just want to generate something
-        return this.insert(joinedTypeName, v || {});
+        return this.insert(joinedTypeName, v || {}, noOverride);
       });
     } else {
       valueToStore = value;
@@ -182,7 +190,7 @@ export class MockStore implements IMockStore{
     };
   }
 
-  private insert(typeName: string, values: { [fieldName: string]: unknown}): Ref {
+  private insert(typeName: string, values: { [fieldName: string]: unknown }, noOverride?: boolean): Ref {
     const keyFieldName = this.getKeyFieldName(typeName);
 
     let key: string;
@@ -195,15 +203,16 @@ export class MockStore implements IMockStore{
       key = uuidv4();
     }
 
-    for (const joinedFieldName of Object.keys(values)) {
-      if (joinedFieldName === '$ref') continue;
-      this.set(
+    for (const fieldName of Object.keys(values)) {
+      if (fieldName === '$ref') continue;
+      this.set({
         typeName,
         key,
-        joinedFieldName,
+        fieldName,
         // @ts-ignore don't know
-        values[joinedFieldName]
-      );
+        value: values[fieldName],
+        noOverride,
+      });
     };
 
     return { $ref: key };
