@@ -4,15 +4,7 @@ import { assertIsDefined, isDefined } from 'ts-is-defined';
 import stringify from 'fast-json-stable-stringify';
 
 import { IMockStore, GetArgs, SetArgs, isRef, assertIsRef, Ref } from './types';
-
-function uuidv4() {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
-    const r = (Math.random() * 16) | 0;
-    // eslint-disable-next-line eqeqeq
-    const v = c == 'x' ? r : (r & 0x3) | 0x8;
-    return v.toString(16);
-  });
-}
+import { uuidv4 } from './utils';
 
 type Mocks = {
     [typeOrScalarName: string]:
@@ -194,23 +186,32 @@ export class MockStore implements IMockStore{
     const keyFieldName = this.getKeyFieldName(typeName);
 
     let key: string;
+
+    // when we generate a key for the type, we might produce
+    // other associated values with it
+    // We keep track of them and we'll insert them, with propririty
+    // for the ones that we areasked to insert
+    let otherValues : {[fieldName: string]: unknown } = {};
+
     if (isRef(values)) {
       key = values.$ref;
     } else if (keyFieldName && keyFieldName in values) {
       // @ts-ignore don't know
       key = values[keyFieldName];
     } else {
-      key = uuidv4();
+      key = this.generateKeyForType(typeName, (otherFieldName, otherFieldValue) => {
+        otherValues[otherFieldName] = otherFieldValue;
+      });
     }
 
-    for (const fieldName of Object.keys(values)) {
+    const toInsert = { ...otherValues, ...values };
+    for (const fieldName of Object.keys(toInsert)) {
       if (fieldName === '$ref') continue;
       this.set({
         typeName,
         key,
         fieldName,
-        // @ts-ignore don't know
-        value: values[fieldName],
+        value: toInsert[fieldName],
         noOverride,
       });
     };
@@ -252,6 +253,19 @@ export class MockStore implements IMockStore{
     return this.generateValueFromType(fieldType);
   }
 
+  private generateKeyForType(typeName: string, onOtherFieldsGenerated?: (fieldName: string, value: unknown) => void) {
+    const keyFieldName = this.getKeyFieldName(typeName);
+
+    if (!keyFieldName) return uuidv4();
+
+    return this.generateFieldValue(
+      typeName,
+      keyFieldName,
+      onOtherFieldsGenerated,
+    ) as string;
+  }
+
+
   private generateValueFromType(fieldType: GraphQLOutputType): unknown {
     const nullableType = getNullableType(fieldType);
 
@@ -260,7 +274,8 @@ export class MockStore implements IMockStore{
       // @ts-ignore don't know
       return this.mocks[nullableType.name]();
     } else if (isObjectType(nullableType)) {
-      return { $ref: uuidv4() };
+      // this will create a new random ref
+      return this.insert(nullableType.name, {});
     } else if (isListType(nullableType)) {
       return [...new Array(randomListLength())].map(() => this.generateValueFromType(nullableType.ofType));
     } else {
@@ -310,6 +325,7 @@ export class MockStore implements IMockStore{
 
     return null;
   }
+
 }
 
 

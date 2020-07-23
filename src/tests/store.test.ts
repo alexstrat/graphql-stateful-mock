@@ -220,5 +220,25 @@ describe('MockStore', () => {
 
     // should retrurn array of valid refs
     expect(myFriendsRefs[0]).toHaveProperty('$ref')
-  })
+  });
+
+  it('should support ID of type number', () => {
+    const typeDefs = `
+      type User {
+        id: Int!
+        name: String!
+      }
+
+      type Query {
+        viewer: User!
+        userById(id: Int!): User!
+      }
+    `;
+
+    const schema = buildSchema(typeDefs);
+
+    const store = new MockStore({ schema });
+    const user = store.get('Query', 'ROOT', 'viewer') as Ref<number>;
+    expect(typeof user.$ref).toBe('number');
+  });
 });

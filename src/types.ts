@@ -1,17 +1,17 @@
-export type Ref = {
-  $ref: string,
+export type Ref<KeyT = string> = {
+  $ref: KeyT,
 };
 
-export type GetArgs = {
+export type GetArgs<KeyT = string> = {
   typeName: string,
-  key: string,
+  key: KeyT,
   fieldName: string,
   fieldArgs?: string | { [argName: string]: any },
 }
 
-export type SetArgs = {
+export type SetArgs<KeyT = string> = {
   typeName: string,
-  key: string,
+  key: KeyT,
   fieldName: string,
   fieldArgs?: string | { [argName: string]: any },
   value?: unknown,
@@ -25,17 +25,17 @@ export type SetArgs = {
 }
 
 export interface IMockStore {
-  get(typeName: string, key: string, fieldName: string): unknown | Ref;
-  get(args: GetArgs): unknown | Ref;
+  get<KeyT = string>(typeName: string, key: KeyT, fieldName: string): unknown | Ref<KeyT>;
+  get<KeyT = string>(args: GetArgs): unknown | Ref<KeyT>;
   set(typeName: string, key: string, fieldName: string, value?: unknown): void;
   set(args: SetArgs): void;
 }
 
-export function isRef(maybeRef: unknown): maybeRef is Ref {
+export function isRef<KeyT = string>(maybeRef: unknown): maybeRef is Ref<KeyT> {
   return maybeRef && typeof maybeRef === 'object' && maybeRef.hasOwnProperty('$ref');
 };
 
-export function assertIsRef(maybeRef: unknown, message?: string): asserts maybeRef is Ref {
+export function assertIsRef<KeyT = string>(maybeRef: unknown, message?: string): asserts maybeRef is Ref<KeyT> {
   if (!isRef(maybeRef)) {
     throw new Error(message || `Expected ${maybeRef} to be a valid Ref.`);
   }
