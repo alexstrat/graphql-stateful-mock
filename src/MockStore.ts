@@ -1,5 +1,7 @@
 import { GraphQLSchema, isObjectType, isScalarType, getNullableType, isListType, GraphQLOutputType } from 'graphql';
 import invariant from 'ts-invariant';
+import { assertIsDefined } from 'ts-is-defined';
+import { IMockStore, GetArgs, SetArgs } from './types';
 
 function uuidv4() {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
@@ -44,7 +46,7 @@ type Entity = {
   [key: string]: unknown
 }
 
-export class MockStore {
+export class MockStore implements IMockStore{
   private schema: GraphQLSchema;
   private mocks: Mocks;
   private typePolicies: {
@@ -60,13 +62,26 @@ export class MockStore {
   }
 
   get(
-    typeName: string,
-    key: string,
-    fieldName: string,
-    args?: object,
-    // defaultValue?: unknown todo
+    _typeName: string | GetArgs,
+    _key?: string,
+    _fieldName?: string,
   ) {
-    // invariant(variables, 'Not implemented');
+
+    // agument normalization
+    let args: GetArgs;
+    if (typeof _typeName === 'string') {
+      assertIsDefined(_key, 'key was not provided');
+      assertIsDefined(_fieldName, 'fieldName was not provided');
+      args = {
+        typeName: _typeName,
+        key: _key,
+        fieldName: _fieldName,
+      }
+    } else {
+      args = _typeName;
+    }
+
+    const { typeName, key, fieldName} = args;
 
     if (
       this.store[typeName] === undefined
@@ -88,7 +103,30 @@ export class MockStore {
     return this.store[typeName][key][fieldName];
   }
  
-  set(typeName: string, key: string, fieldName: string, value: unknown) {
+  set(
+    _typeName: string | SetArgs,
+    _key?: string,
+    _fieldName?: string,
+    _value?: unknown
+  ): void {
+
+    // agument normalization
+    let args: SetArgs;
+    if (typeof _typeName === 'string') {
+      assertIsDefined(_key, 'key was not provided');
+      assertIsDefined(_fieldName, 'fieldName was not provided');
+      args = {
+        typeName: _typeName,
+        key: _key,
+        fieldName: _fieldName,
+        value: _value,
+      }
+    } else {
+      args = _typeName;
+    }
+
+    const { typeName, key, fieldName, value } = args;
+
     if (this.isKeyField(typeName, fieldName) && value !== key) {
       throw new Error(`Field ${fieldName} is a key field of ${typeName} and you are trying to set it to ${value} while the key is ${key}`);
     }

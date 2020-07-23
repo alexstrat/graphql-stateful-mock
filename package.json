@@ -25,6 +25,7 @@
   "dependencies": {
     "@graphql-tools/schema": "^6.0.14",
     "@graphql-tools/utils": "^6.0.14",
-    "ts-invariant": "^0.4.4"
+    "ts-invariant": "^0.4.4",
+    "ts-is-defined": "0.0.3"
   }
 }

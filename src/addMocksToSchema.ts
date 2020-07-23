@@ -19,7 +19,6 @@ export function addMocksToSchema({ schema, store, resolvers }: IMockOptions): Gr
         info.parentType.name,
         source.$ref,
         info.fieldName,
-        args
       )
     }
 
@@ -30,7 +29,6 @@ export function addMocksToSchema({ schema, store, resolvers }: IMockOptions): Gr
         info.parentType.name,
         'ROOT',
         info.fieldName,
-        args
       )
     }
 
