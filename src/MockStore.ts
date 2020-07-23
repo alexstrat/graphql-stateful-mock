@@ -99,7 +99,12 @@ export class MockStore implements IMockStore{
       if (this.isKeyField(typeName, fieldName)) {
         value = key;
       } else {
-        value = this.generateFieldValue(typeName, fieldName);
+        value = this.generateFieldValue(typeName, fieldName, (otherFieldName, otherValue) => {
+          // if we get a key field in the mix we don't care
+          if (this.isKeyField(typeName, otherFieldName)) return;
+
+          this.set(typeName, key, otherFieldName, otherValue);
+        });
       }
 
       this.set({typeName, key, fieldName, fieldArgs, value});
@@ -152,20 +157,27 @@ export class MockStore implements IMockStore{
     };
   }
 
-  private generateFieldValue(typeName: string, fieldName: string): (unknown | undefined) {
+  private generateFieldValue(
+    typeName: string,
+    fieldName: string,
+    onOtherFieldsGenerated?: (fieldName: string, value: unknown) => void
+  ): (unknown | undefined) {
     let value = undefined
 
     const mock = this.mocks ? this.mocks[typeName] : undefined;
     if (mock) {
       if (typeof mock === 'function') {
         const values = mock();
-        // TODO: handle other values
-
         if (typeof values !== 'object' || values == null) {
-          throw new Error(`Value return by the mock for ${typeName} is not an object`);
+          throw new Error(`Value returned by the mock for ${typeName} is not an object`);
         }
-        // @ts-ignore don't know
-        value = values[fieldName];
+        
+        for (const otherFieldName of Object.keys(values)) {
+          if (otherFieldName === fieldName) continue;
+          onOtherFieldsGenerated && onOtherFieldsGenerated(otherFieldName, (values as any)[otherFieldName]);
+        }
+
+        value = (values as any)[fieldName];
       } else if (typeof mock[fieldName] === 'function') {
         // @ts-ignore don't know
         value = mock[fieldName]();

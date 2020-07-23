@@ -37,6 +37,7 @@ describe('MockStore', () => {
     const store = new MockStore({ schema });
     expect(store.get('User', '123', 'age')).toEqual(store.get('User', '123', 'age'));
   });
+
   it('should return the same value when called multiple times with same args', () => {
     const store = new MockStore({ schema });
     const user1 = store.get({
@@ -116,6 +117,25 @@ describe('MockStore', () => {
     });
     expect(store.get('User', '123', 'name')).toEqual('Superman');
   });
+
+  it('with type level mocks, it should produce consistant values', () => {
+    const store = new MockStore({
+      schema,
+      mocks: {
+        User: () => {
+          const charCode = 65 + Math.round(Math.random() * 25);
+          return {
+            age: charCode,
+            name: String.fromCharCode(charCode),
+          }
+        }
+      }
+    });
+
+    const age = store.get('User', '123', 'age') as number;
+    
+    expect(store.get('User', '123', 'name')).toEqual(String.fromCharCode(age));
+  })
 
   it('should generate a ref when the field is a type', () => {
     const store = new MockStore({ schema });
