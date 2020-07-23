@@ -40,3 +40,7 @@ export function assertIsRef<KeyT = string>(maybeRef: unknown, message?: string):
     throw new Error(message || `Expected ${maybeRef} to be a valid Ref.`);
   }
 };
+
+export function isRecord(obj: unknown): obj is {[key: string]: unknown } {
+  return typeof obj === 'object' && obj !== null;
+}

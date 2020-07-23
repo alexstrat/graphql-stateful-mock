@@ -3,7 +3,7 @@ import invariant from 'ts-invariant';
 import { assertIsDefined, isDefined } from 'ts-is-defined';
 import stringify from 'fast-json-stable-stringify';
 
-import { IMockStore, GetArgs, SetArgs, isRef, assertIsRef, Ref } from './types';
+import { IMockStore, GetArgs, SetArgs, isRef, assertIsRef, Ref, isRecord } from './types';
 import { uuidv4 } from './utils';
 
 type Mocks = {
@@ -155,11 +155,10 @@ export class MockStore implements IMockStore{
     
     // deal with nesting
     if (isObjectType(fieldType) && isDefined(value)) {
-      if (typeof value !== 'object') throw new Error(`Value to set for ${typeName}.${fieldName} should be an object or null or undefined`);
+      if (!isRecord(value)) throw new Error(`Value to set for ${typeName}.${fieldName} should be an object or null or undefined`);
       assertIsDefined(value, 'Should not be null at this point');
       const joinedTypeName = fieldType.name;
 
-      // @ts-ignore
       valueToStore = this.insert(joinedTypeName, value, noOverride);
     } else if (isListType(fieldType) && isObjectType(getNullableType(fieldType.ofType)) && isDefined(value)){
       if (!Array.isArray(value)) throw new Error(`Value to set for ${typeName}.${fieldName} should be an array or null or undefined`);
@@ -196,7 +195,7 @@ export class MockStore implements IMockStore{
     if (isRef(values)) {
       key = values.$ref;
     } else if (keyFieldName && keyFieldName in values) {
-      // @ts-ignore don't know
+      // @ts-ignore we expect it to be valid
       key = values[keyFieldName];
     } else {
       key = this.generateKeyForType(typeName, (otherFieldName, otherFieldValue) => {
@@ -241,7 +240,6 @@ export class MockStore implements IMockStore{
 
         value = (values as any)[fieldName];
       } else if (typeof mock[fieldName] === 'function') {
-        // @ts-ignore don't know
         value = mock[fieldName]();
       }
     }
@@ -270,9 +268,9 @@ export class MockStore implements IMockStore{
     const nullableType = getNullableType(fieldType);
 
     if (isScalarType(nullableType)) {
-      invariant(typeof this.mocks[nullableType.name] === 'function', `No mock provided for type ${nullableType.name}`);
-      // @ts-ignore don't know
-      return this.mocks[nullableType.name]();
+      const mockFn = this.mocks[nullableType.name];
+      if (typeof mockFn !== 'function') throw new Error(`No mock provided for type ${nullableType.name}`);
+      return mockFn();
     } else if (isObjectType(nullableType)) {
       // this will create a new random ref
       return this.insert(nullableType.name, {});
