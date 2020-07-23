@@ -167,9 +167,10 @@ export class MockStore implements IMockStore{
       const joinedTypeName = getNullableType(fieldType.ofType).name;
 
       valueToStore = value.map((v, index) => {
-        if (!isDefined(v)) return v;
-        if (typeof v !== 'object') throw new Error(`Value to set for ${typeName}.${fieldName}[${index}] should be an object or null or undefined`);
-        return this.insert(joinedTypeName, v);
+        if (v === null) return null;
+        if (v !== undefined && typeof v !== 'object' ) throw new Error(`Value to set for ${typeName}.${fieldName}[${index}] should be an object or null or undefined but got ${v}`);
+        // if v is undefined (empty array slot) it means we just want to generate something
+        return this.insert(joinedTypeName, v || {});
       });
     } else {
       valueToStore = value;

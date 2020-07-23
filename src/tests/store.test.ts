@@ -192,6 +192,17 @@ describe('MockStore', () => {
 
     const MyFriendsNames = myFriendsRefs.map(ref => store.get('User', ref.$ref, 'name')).sort();
     expect(MyFriendsNames).toEqual(['Nico', 'Ross', 'Trev']);
-    
   });
+
+  it('should support nested set with empyt list', () => {
+    const store = new MockStore({ schema });
+
+    store.set('User', 'me', 'friends', [...new Array(2)]);
+
+    const myFriendsRefs = store.get('User', 'me', 'friends') as Ref[];
+    expect(myFriendsRefs).toHaveLength(2);
+
+    // should retrurn array of valid refs
+    expect(myFriendsRefs[0]).toHaveProperty('$ref')
+  })
 });
