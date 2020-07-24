@@ -1,13 +1,13 @@
 {
-  "name": "graphql-mock-store",
-  "version": "1.0.0",
+  "name": "graphql-stateful-mock",
+  "version": "1.0.0-rc1",
   "description": "",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
   "scripts": {
     "test": "jest"
   },
-  "author": "",
+  "author": "Alexandre Lacheze",
   "license": "ISC",
   "devDependencies": {
     "@types/chai": "^4.2.11",

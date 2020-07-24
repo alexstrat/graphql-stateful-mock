@@ -1,34 +1,31 @@
-# Usage
+# graphql-stateful-mock
+
+[![npm version](https://badge.fury.io/js/graphql-stateful-mock.svg)](https://badge.fury.io/js/graphql-stateful-mock)
+
+Mock GraphQL schema — but in stateful way.
 
 
-```ts
-import { MockStore } from 'graphql-mock-store';
 
-const schema = buildClientSchema(introspectionResult);
+## Install
 
-const store = new MockStore({
-  schema,
-  mocks: {
-  }
-});
+```sh
+npm install graphql-stateful-mock -D
+```
 
-store.get('User', id, 'name');
+## Usages
 
-store.modify('User', id, 'name', newName);
+### Default mock
 
-// store.getList('User', id, { defaultLength: 10 });
+### Customize mock generators
 
-addMockToSchema({
-  schema,
-  mockStore,
-});
+### Dealing with mutations
 
+### Dealing with arguments
 
-const mockResolver = (obj, ) => {
-  if(scalar) return obj[fieldName];
-  if (isRef(obj[fieldName])) {
-    const { typeName, id } = obj[fieldName]);
-    return store.get(typeName, id)
-  }
+### Dealing with lists
 
-}
+### Dealing with pagination
+
+#### Relay-style pagination
+
+## Related

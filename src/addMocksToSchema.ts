@@ -1,16 +1,73 @@
 import { GraphQLSchema, GraphQLFieldResolver, defaultFieldResolver, GraphQLObjectType } from 'graphql';
 import { mapSchema, MapperKind, IResolvers } from '@graphql-tools/utils';
 import { addResolversToSchema } from '@graphql-tools/schema';
-import { MockStore } from './MockStore';
-import { isRef } from './types';
+import { isRef, IMockStore } from './types';
 
 type IMockOptions = {
   schema: GraphQLSchema,
-  store: MockStore,
+  store: IMockStore,
   resolvers?: IResolvers,
 }
-// todo: add option to preserver resolver
-// todo: make optional passing store as option
+
+// todo: add option to preserve resolver
+/**
+ * Given a `schema` and a `MockStore`, returns an executable schema that
+ * will use the provided `MockStore` to execute queries.
+ * 
+ * ```ts
+ * const schema = buildSchema(`
+ *  type User {
+ *    id: ID!
+ *    name: String!
+ *  }
+ *  type Query {
+ *    me: User!
+ *  }
+ * `)
+ * 
+ * const store = createMockStore({ schema });
+ * const mockedSchema = addMocksToSchema({ schema, store });
+ * ```
+ *
+ *
+ * If a `resolvers` parameter is passed, the query execution will use
+ * the provided `resolvers` if, one exists, instead of the default mock
+ * resolver.
+ * 
+ * 
+ * ```ts
+ * const schema = buildSchema(`
+ *   type User {
+ *     id: ID!
+ *     name: String!
+ *   }
+ *   type Query {
+ *     me: User!
+ *   }
+ *   type Mutation {
+ *     setMyName(newName: String!): User!
+ *   }
+ * `)
+ *
+ * const store = createMockStore({ schema });
+ * const mockedSchema = addMocksToSchema({
+ *   schema,
+ *   store,
+ *   resolvers: {
+ *     Mutation: {
+ *       setMyName: (_, { newName }) => {
+ *          const { $ref } = store.get('Query', 'ROOT', 'viewer');
+ *          store.set('User', $ref, 'name', newName);
+ *          return { $ref };
+ *       }
+ *     }
+ *   }
+ *  });
+ * ```
+ * 
+ * 
+ * `Query` and `Mutation` type will use `key` `'ROOT'`. 
+ */
 export function addMocksToSchema({ schema, store, resolvers }: IMockOptions): GraphQLSchema {
 
   const mockResolver:GraphQLFieldResolver<any, any> = (source, args, contex, info) => {

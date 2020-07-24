@@ -2,7 +2,7 @@ import { GraphQLSchema, isObjectType, isScalarType, getNullableType, isListType,
 import { assertIsDefined, isDefined } from 'ts-is-defined';
 import stringify from 'fast-json-stable-stringify';
 
-import { IMockStore, GetArgs, SetArgs, isRef, assertIsRef, Ref, isRecord, MockStoreOptions, TypePolicy, Mocks } from './types';
+import { IMockStore, GetArgs, SetArgs, isRef, assertIsRef, Ref, isRecord, TypePolicy, Mocks } from './types';
 import { uuidv4, randomListLength } from './utils';
 
 export const defaultMocks = {
@@ -26,7 +26,13 @@ export class MockStore implements IMockStore{
 
   private store: { [typeName: string]: { [key: string]: Entity } } = {};
 
-  constructor({ schema, mocks, typePolicies } : MockStoreOptions) {
+  constructor({ schema, mocks, typePolicies }: {
+    schema: GraphQLSchema,
+    mocks?: Mocks,
+    typePolicies?: {
+      [typeName: string]: TypePolicy
+    }
+  }) {
     this.schema = schema;
     this.mocks = {...defaultMocks, ...mocks};
     this.typePolicies = typePolicies || {};
@@ -286,7 +292,7 @@ export class MockStore implements IMockStore{
   }
 
   private getKeyFieldName(typeName: string): string | null {
-    const typePolicyKeyField = this.typePolicies[typeName]?.keyField;
+    const typePolicyKeyField = this.typePolicies[typeName]?.keyFieldName;
     if (typePolicyKeyField !== undefined) {
       if (typePolicyKeyField === false) return null;
       return typePolicyKeyField;
