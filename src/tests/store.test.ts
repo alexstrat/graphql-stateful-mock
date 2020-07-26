@@ -175,11 +175,12 @@ describe('MockStore', () => {
 
   it('should be able to generate a list of scalar types', () => {
     const store = new MockStore({ schema });
-    const surnames = store.get('User', '123', 'surnames');
+    const surnames = store.get('User', '123', 'surnames') as string[];
 
     expect(surnames).toBeInstanceOf(Array);
-    //@ts-ignore
-    expect(typeof surnames[0]).toBe('string');
+    if (surnames.length > 0) {
+      expect(typeof surnames[0]).toBe('string');
+    }
   });
 
 
