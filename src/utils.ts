@@ -9,4 +9,4 @@ export function uuidv4() {
 
 export const randomListLength = () => Math.round(Math.random() * 10);
 
-export const takeRandom = <T>(arr: T[]) => arr[Math.round(Math.random() * arr.length)];
+export const takeRandom = <T>(arr: T[]) => arr[Math.floor(Math.random() * arr.length)];
