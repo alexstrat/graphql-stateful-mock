@@ -142,7 +142,12 @@ export class MockStore implements IMockStore{
       assertIsDefined(value, 'Should not be null at this point');
       const joinedTypeName = fieldType.name;
 
-      valueToStore = this.insert(joinedTypeName, value, noOverride);
+      const currentValue = this.store[typeName][key][fieldNameInStore];
+      valueToStore = this.insert(
+          joinedTypeName,
+          isRef(currentValue) ? { ...currentValue, ...value } : value,
+          noOverride
+        );
     } else if (isListType(fieldType) && isObjectType(getNullableType(fieldType.ofType)) && isDefined(value)){
       if (!Array.isArray(value)) throw new Error(`Value to set for ${typeName}.${fieldName} should be an array or null or undefined`);
 

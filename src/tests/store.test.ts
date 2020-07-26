@@ -205,6 +205,21 @@ describe('MockStore', () => {
     expect(store.get('User', 'me', 'name')).toEqual('Alexandre');
   });
 
+  it('nested set should not override ref', () => {
+    const store = new MockStore({ schema });
+
+    store.set('Query', 'ROOT', 'viewer', {
+      id: 'me',
+    });
+
+    store.set('Query', 'ROOT', 'viewer', {
+      name: 'Alexandre',
+    });
+
+    expect(store.get('Query', 'ROOT', 'viewer')).toEqual({ $ref: 'me' });
+    expect(store.get('User', 'me', 'name')).toEqual('Alexandre');
+  });
+
   it('should support nested set with list', () => {
     const store = new MockStore({ schema });
 
