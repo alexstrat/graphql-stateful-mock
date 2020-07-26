@@ -1,5 +1,5 @@
 import { buildSchema, graphql } from 'graphql';
-import { MockStore, addMocksToSchema, assertIsRef } from '..';
+import { addMocksToSchema, assertIsRef, createMockStore } from '..';
 
 const typeDefs = `
 type User {
@@ -31,7 +31,7 @@ describe('addMocksToSchema', () => {
         }
       }
       `;
-    const store = new MockStore({ schema });
+    const store = createMockStore({ schema });
 
     const mockedSchema = addMocksToSchema({ schema, store });
     const { data, errors } = await graphql({
@@ -55,7 +55,7 @@ describe('addMocksToSchema', () => {
   });
 
   it('mutations resolver', async () => {
-    const store = new MockStore({ schema });
+    const store = createMockStore({ schema });
     const mockedSchema = addMocksToSchema({ schema, store, resolvers: {
       Mutation: {
         changeViewerName: (_, { newName }: { newName: string} ) => {
@@ -100,7 +100,7 @@ describe('addMocksToSchema', () => {
         }
       }
       `;
-    const store = new MockStore({ schema });
+    const store = createMockStore({ schema });
 
     const mockedSchema = addMocksToSchema({ schema, store });
     const { data, errors } = await graphql({

@@ -1,5 +1,5 @@
 import { buildSchema } from 'graphql';
-import { MockStore } from '..';
+import { createMockStore } from '..';
 import { assertIsRef, Ref } from '../types';
 
 const typeDefs = `
@@ -30,30 +30,30 @@ const schema = buildSchema(typeDefs);
 
 describe('MockStore', () => {
   it('should generate a value properly without provided mocks', () => {
-    const store = new MockStore({ schema });
+    const store = createMockStore({ schema });
     expect(store.get('User', '123', 'name')).toEqual('Hello World');
   });
 
   it('should generate a value properly without provided mocks (enum)', () => {
-    const store = new MockStore({ schema });
+    const store = createMockStore({ schema });
     const value = store.get('User', '123', 'sex') as string;
     expect(['Male', 'Female', 'Other'].indexOf(value)).not.toEqual(-1);
   });
 
   it('should generate an id that matches key', () => {
-    const store = new MockStore({ schema });
+    const store = createMockStore({ schema });
     store.get('User', '123', 'name');
 
     expect(store.get('User', '123', 'id')).toEqual('123');
   });
 
   it('should return the same value when called multiple times', () => {
-    const store = new MockStore({ schema });
+    const store = createMockStore({ schema });
     expect(store.get('User', '123', 'age')).toEqual(store.get('User', '123', 'age'));
   });
 
   it('should return the same value when called multiple times with same args', () => {
-    const store = new MockStore({ schema });
+    const store = createMockStore({ schema });
     const user1 = store.get({
       typeName: 'Query',
       key: 'ROOT',
@@ -76,7 +76,7 @@ describe('MockStore', () => {
   });
 
   it('should treat empty object args the same as no arg', () => {
-    const store = new MockStore({ schema });
+    const store = createMockStore({ schema });
     const user1 = store.get({
       typeName: 'Query',
       key: 'ROOT',
@@ -98,7 +98,7 @@ describe('MockStore', () => {
   })
 
   it('sould return a different value if called with different field args', () => {
-    const store = new MockStore({ schema });
+    const store = createMockStore({ schema });
     const user1 = store.get({
       typeName: 'Query',
       key: 'ROOT',
@@ -121,7 +121,7 @@ describe('MockStore', () => {
   });
 
   it('should respect provided mocks', () => {
-    const store = new MockStore({
+    const store = createMockStore({
       schema,
       mocks: {
         User: {
@@ -133,7 +133,7 @@ describe('MockStore', () => {
   });
 
   it('with type level mocks, it should produce consistant values', () => {
-    const store = new MockStore({
+    const store = createMockStore({
       schema,
       mocks: {
         User: () => {
@@ -152,7 +152,7 @@ describe('MockStore', () => {
   })
 
   it('should support nested mocks', () => {
-    const store = new MockStore({
+    const store = createMockStore({
       schema,
       mocks: {
         User: {
@@ -168,13 +168,13 @@ describe('MockStore', () => {
   });
 
   it('should generate a ref when the field is a type', () => {
-    const store = new MockStore({ schema });
+    const store = createMockStore({ schema });
     const value = store.get('Query', 'ROOT', 'viewer');
     expect(value).toHaveProperty('$ref');
   });
 
   it('should be able to generate a list of scalar types', () => {
-    const store = new MockStore({ schema });
+    const store = createMockStore({ schema });
     const surnames = store.get('User', '123', 'surnames') as string[];
 
     expect(surnames).toBeInstanceOf(Array);
@@ -185,7 +185,7 @@ describe('MockStore', () => {
 
 
   it('should be able to generate a list of Object type', () => {
-    const store = new MockStore({ schema });
+    const store = createMockStore({ schema });
     const friends = store.get('User', '123', 'friends');
 
     expect(friends).toBeInstanceOf(Array);
@@ -194,7 +194,7 @@ describe('MockStore', () => {
   });
 
   it('should support nested set', () => {
-    const store = new MockStore({ schema });
+    const store = createMockStore({ schema });
 
     store.set('Query', 'ROOT', 'viewer', {
       id: 'me',
@@ -207,7 +207,7 @@ describe('MockStore', () => {
   });
 
   it('nested set should not override ref', () => {
-    const store = new MockStore({ schema });
+    const store = createMockStore({ schema });
 
     store.set('Query', 'ROOT', 'viewer', {
       id: 'me',
@@ -222,7 +222,7 @@ describe('MockStore', () => {
   });
 
   it('should support nested set with list', () => {
-    const store = new MockStore({ schema });
+    const store = createMockStore({ schema });
 
     store.set('User', 'me', 'friends', [
       {
@@ -241,7 +241,7 @@ describe('MockStore', () => {
   });
 
   it('should support nested set with empyt list', () => {
-    const store = new MockStore({ schema });
+    const store = createMockStore({ schema });
 
     store.set('User', 'me', 'friends', [...new Array(2)]);
 
@@ -267,7 +267,7 @@ describe('MockStore', () => {
 
     const schema = buildSchema(typeDefs);
 
-    const store = new MockStore({ schema });
+    const store = createMockStore({ schema });
     const user = store.get('Query', 'ROOT', 'viewer') as Ref<number>;
     expect(typeof user.$ref).toBe('number');
   });
