@@ -3,7 +3,8 @@ import { assertIsDefined, isDefined } from 'ts-is-defined';
 import stringify from 'fast-json-stable-stringify';
 
 import { IMockStore, GetArgs, SetArgs, isRef, assertIsRef, Ref, isRecord, TypePolicy, Mocks } from './types';
-import { uuidv4, randomListLength, takeRandom } from './utils';
+import { uuidv4, randomListLength, takeRandom, makeRef } from './utils';
+import { throws } from 'assert';
 
 export const defaultMocks = {
   'Int': () => Math.round(Math.random() * 200) - 100,
@@ -48,8 +49,6 @@ export class MockStore implements IMockStore{
     // agument normalization
     let args: GetArgs;
     if (typeof _typeName === 'string') {
-      assertIsDefined(_key, 'key was not provided');
-      assertIsDefined(_fieldName, 'fieldName was not provided');
       args = {
         typeName: _typeName,
         key: _key,
@@ -60,8 +59,46 @@ export class MockStore implements IMockStore{
       args = _typeName;
     }
 
+    return this.getImpl(args);
+  }
+
+  set(
+    _typeName: string | SetArgs,
+    _key?: string,
+    _fieldName?: string,
+    _value?: unknown
+  ): void {
+
+    // agument normalization
+    let args: SetArgs;
+    if (typeof _typeName === 'string') {
+      assertIsDefined(_key, 'key was not provided');
+      assertIsDefined(_fieldName, 'fieldName was not provided');
+      args = {
+        typeName: _typeName,
+        key: _key,
+        fieldName: _fieldName,
+        value: _value,
+      }
+    } else {
+      args = _typeName;
+    }
+
+    return this.setImpl(args);
+  }
+
+  private getImpl(args: GetArgs) {
     const { typeName, key, fieldName, fieldArgs} = args;
 
+    if(!fieldName) {
+      if (!key) {
+        return this.insert(typeName, {});
+      } else {
+        return makeRef(key);
+      }
+    }
+
+    assertIsDefined(key, 'key argument should be given');
 
     let fieldNameInStore: string = getFieldNameInStore(fieldName, fieldArgs);
 
@@ -90,28 +127,7 @@ export class MockStore implements IMockStore{
     return this.store[typeName][key][fieldNameInStore];
   }
  
-  set(
-    _typeName: string | SetArgs,
-    _key?: string,
-    _fieldName?: string,
-    _value?: unknown
-  ): void {
-
-    // agument normalization
-    let args: SetArgs;
-    if (typeof _typeName === 'string') {
-      assertIsDefined(_key, 'key was not provided');
-      assertIsDefined(_fieldName, 'fieldName was not provided');
-      args = {
-        typeName: _typeName,
-        key: _key,
-        fieldName: _fieldName,
-        value: _value,
-      }
-    } else {
-      args = _typeName;
-    }
-
+  private setImpl(args: SetArgs) {
     const { typeName, key, fieldName, fieldArgs, value, noOverride } = args;
 
     let fieldNameInStore: string = getFieldNameInStore(fieldName, fieldArgs);

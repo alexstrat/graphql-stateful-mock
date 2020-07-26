@@ -17,8 +17,8 @@ export type TypePolicy = {
 
 export type GetArgs<KeyT = string> = {
   typeName: string;
-  key: KeyT;
-  fieldName: string;
+  key?: KeyT;
+  fieldName?: string;
   /**
   * Optionnal arguments when querying the field.
   *
@@ -59,7 +59,8 @@ export type SetArgs<KeyT = string> = {
 export interface IMockStore {
   /**
    * Get a field value from the store for the given type, key and field
-   * name — and optionnally field arguments.
+   * name — and optionnally field arguments. If the field name is not given,
+   * a reference to the type will be returned.
    * 
    * If the the value for this field is not set, a value will be
    * generated according to field return type and mock functions.
@@ -86,7 +87,13 @@ export interface IMockStore {
     fieldName: string,
     fieldArgs?: string | { [argName: string]: any }
   ): unknown | Ref<KeyT>;
-
+  /**
+   * Get a reference to the type.
+   */
+  get<KeyT = string>(
+    typeName: string,
+    key?: KeyT,
+  ): unknown | Ref<KeyT>;
   /**
    * Set a field value in the store for the given type, key and field
    * name — and optionnally field arguments.
@@ -97,12 +104,12 @@ export interface IMockStore {
    * ```ts
    * // set the viewer name
    * store.set('User', 1, 'name', 'Alexandre);
-   * store.set('Query', 'ROOT', 'viewer', makeRef(1));
+   * store.set('Query', 'ROOT', 'viewer', store.get('User', 1));
    *
    * // set the friends of viewer
    * store.set('User', 2, 'name', 'Emily');
    * store.set('User', 3, 'name', 'Caroline');
-   * store.set('User', 1, 'friends', [makeRef(2), makeRef(3)]);
+   * store.set('User', 1, 'friends', [store.get('User', 2), store.get('User', 3)]);
    * ```
    * 
    * But it also supports nested set:
@@ -143,10 +150,6 @@ export function assertIsRef<KeyT = string>(maybeRef: unknown, message?: string):
     throw new Error(message || `Expected ${maybeRef} to be a valid Ref.`);
   }
 };
-
-export function makeRef<KeyT = string>(key: KeyT): Ref<KeyT> {
-  return { $ref: key };
-}
 
 export function isRecord(obj: unknown): obj is {[key: string]: unknown } {
   return typeof obj === 'object' && obj !== null;

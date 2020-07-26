@@ -1,3 +1,5 @@
+import { Ref } from "./types";
+
 export function uuidv4() {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
     const r = (Math.random() * 16) | 0;
@@ -10,3 +12,7 @@ export function uuidv4() {
 export const randomListLength = () => Math.round(Math.random() * 10);
 
 export const takeRandom = <T>(arr: T[]) => arr[Math.floor(Math.random() * arr.length)];
+
+export function makeRef<KeyT = string>(key: KeyT): Ref<KeyT> {
+  return { $ref: key };
+}
