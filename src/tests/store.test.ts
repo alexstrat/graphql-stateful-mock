@@ -10,6 +10,14 @@ type User {
   surnames: [String!]!
 
   friends: [User!]!
+
+  sex: Sex
+}
+
+enum Sex {
+  Male,
+  Female,
+  Other
 }
 
 type Query {
@@ -24,6 +32,12 @@ describe('MockStore', () => {
   it('should generate a value properly without provided mocks', () => {
     const store = new MockStore({ schema });
     expect(store.get('User', '123', 'name')).toEqual('Hello World');
+  });
+
+  it('should generate a value properly without provided mocks (enum)', () => {
+    const store = new MockStore({ schema });
+    const value = store.get('User', '123', 'sex') as string;
+    expect(['Male', 'Female', 'Other'].indexOf(value)).not.toEqual(-1);
   });
 
   it('should generate an id that matches key', () => {

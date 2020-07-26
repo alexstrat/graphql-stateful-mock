@@ -1,9 +1,9 @@
-import { GraphQLSchema, isObjectType, isScalarType, getNullableType, isListType, GraphQLOutputType } from 'graphql';
+import { GraphQLSchema, isObjectType, isScalarType, getNullableType, isListType, GraphQLOutputType, isEnumType } from 'graphql';
 import { assertIsDefined, isDefined } from 'ts-is-defined';
 import stringify from 'fast-json-stable-stringify';
 
 import { IMockStore, GetArgs, SetArgs, isRef, assertIsRef, Ref, isRecord, TypePolicy, Mocks } from './types';
-import { uuidv4, randomListLength } from './utils';
+import { uuidv4, randomListLength, takeRandom } from './utils';
 
 export const defaultMocks = {
   'Int': () => Math.round(Math.random() * 200) - 100,
@@ -254,6 +254,9 @@ export class MockStore implements IMockStore{
       const mockFn = this.mocks[nullableType.name];
       if (typeof mockFn !== 'function') throw new Error(`No mock provided for type ${nullableType.name}`);
       return mockFn();
+    } else if (isEnumType(nullableType)) {
+      const values = nullableType.getValues().map(v => v.value);
+      return takeRandom(values);
     } else if (isObjectType(nullableType)) {
       // this will create a new random ref
       return this.insert(nullableType.name, {});
