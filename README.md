@@ -2,9 +2,11 @@
 
 [![npm version](https://badge.fury.io/js/graphql-stateful-mock.svg)](https://badge.fury.io/js/graphql-stateful-mock)
 
-Mock GraphQL schema — but in stateful way.
+Mock a GraphQL schema — but in a stateful way.
 
-
+Very similar to [GraphQL tools mocking](https://www.graphql-tools.com/docs/mocking/) but produce a schema that is:
+- **consistent**: the same query with the same arguments will, by default, return the exact same result
+- **mutable**: one can implement mutations that will modify the results of subsequent queries
 
 ## Install
 
@@ -12,9 +14,9 @@ Mock GraphQL schema — but in stateful way.
 npm install graphql-stateful-mock -D
 ```
 
-## Usages
+## Usage
 
-### Default mock
+## Recipes
 
 ### Customize mock generators
 
@@ -27,5 +29,7 @@ npm install graphql-stateful-mock -D
 ### Dealing with pagination
 
 #### Relay-style pagination
+
+## Caveats
 
 ## Related

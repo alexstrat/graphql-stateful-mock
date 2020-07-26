@@ -25,6 +25,12 @@ export * from './types';
  * store.get('User', 1, 'name');
  * // > "Alexandre"
  * ```
+ * 
+ * The storage key will correspond to the "key field"
+ * of the type. Field with name `id` or `_id` will be
+ * by default considered as the key field for the type.
+ * However, use `typePolicies` to precise the field to use
+ * as key.
  */
 export function createMockStore(options: {
   /**
