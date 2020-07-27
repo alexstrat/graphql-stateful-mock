@@ -34,6 +34,10 @@ export type GetArgs<KeyT = string> = {
   * arbitraty string.
   */
   fieldArgs?: string | { [argName: string]: any };
+  /**
+   * If no value found, insert the `defaultValue`. 
+   */
+  defaultValue?: unknown | { [fieldName: string]: any },
 }
 
 export type SetArgs<KeyT = string> = {
@@ -85,7 +89,7 @@ export interface IMockStore {
     typeName: string,
     key: KeyT,
     fieldName: string,
-    fieldArgs?: string | { [argName: string]: any }
+    fieldArgs?: string | { [argName: string]: any },
   ): unknown | Ref<KeyT>;
   /**
    * Get a reference to the type.
@@ -93,6 +97,7 @@ export interface IMockStore {
   get<KeyT = string>(
     typeName: string,
     key?: KeyT,
+    defaultValue?: { [fieldName: string]: any },
   ): unknown | Ref<KeyT>;
   /**
    * Set a field value in the store for the given type, key and field

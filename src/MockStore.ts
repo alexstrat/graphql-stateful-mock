@@ -41,23 +41,37 @@ export class MockStore implements IMockStore{
 
   get(
     _typeName: string | GetArgs,
-    _key?: string,
-    _fieldName?: string,
+    _key?: string | number | { [fieldName: string]: any },
+    _fieldName?: string | { [fieldName: string]: any },
     _fieldArgs?: string | { [argName: string]: any },
   ) {
-
-    // agument normalization
-    let args: GetArgs;
-    if (typeof _typeName === 'string') {
-      args = {
-        typeName: _typeName,
-        key: _key,
-        fieldName: _fieldName,
-        fieldArgs: _fieldArgs,
-      }
-    } else {
-      args = _typeName;
+    if (typeof _typeName !== 'string') {
+      // get({...})
+      return this.getImpl(_typeName);
     }
+
+    let args: GetArgs = {
+      typeName: _typeName,
+    };
+
+    if (isRecord(_key) || _key === undefined) {
+      // get('User', { name: 'Alex'})
+      args.defaultValue = _key;
+      return this.getImpl(args);
+    }
+
+    // @ts-ignore issues with key typing
+    args.key = _key;
+
+    if(typeof _fieldName !== 'string') {
+      // get('User', 'me', { name: 'Alex'})
+      args.defaultValue = _fieldName;
+      return this.getImpl(args);
+    }
+
+    // get('User', 'me', 'name'...);
+    args.fieldName = _fieldName;
+    args.fieldArgs = _fieldArgs;
 
     return this.getImpl(args);
   }
@@ -88,17 +102,22 @@ export class MockStore implements IMockStore{
   }
 
   private getImpl(args: GetArgs) {
-    const { typeName, key, fieldName, fieldArgs} = args;
+    const { typeName, key, fieldName, fieldArgs, defaultValue } = args;
 
     if(!fieldName) {
-      if (!key) {
-        return this.insert(typeName, {});
-      } else {
-        return makeRef(key);
+      if (defaultValue !== undefined && !isRecord(defaultValue)) {
+        throw new Error('`defaultValue` should be an object');
       }
+      let valuesToInsert = defaultValue ? defaultValue : {};
+
+      if (key) {
+        valuesToInsert = { ...valuesToInsert, ...makeRef(key) };
+      }
+
+      return this.insert(typeName, valuesToInsert, true);
     }
 
-    assertIsDefined(key, 'key argument should be given');
+    assertIsDefined(key, 'key argument should be given when fieldName is given');
 
     let fieldNameInStore: string = getFieldNameInStore(fieldName, fieldArgs);
 
@@ -110,7 +129,9 @@ export class MockStore implements IMockStore{
       this.store[typeName][key][fieldNameInStore] === undefined
     ) {
       let value;
-      if (this.isKeyField(typeName, fieldName)) {
+      if (defaultValue !== undefined) {
+        value = defaultValue;
+      } else if (this.isKeyField(typeName, fieldName)) {
         value = key;
       } else {
         value = this.generateFieldValue(typeName, fieldName, (otherFieldName, otherValue) => {

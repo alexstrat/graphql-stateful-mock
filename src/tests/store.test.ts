@@ -271,4 +271,31 @@ describe('MockStore', () => {
     const user = store.get('Query', 'ROOT', 'viewer') as Ref<number>;
     expect(typeof user.$ref).toBe('number');
   });
+
+  describe('default values', () => {
+    it('should be inserted when called with no key', () => {
+      const store = createMockStore({ schema });
+
+      const alexRef = store.get('User', { name: 'Alexandre'}) as Ref;
+
+      expect(store.get('User', alexRef.$ref, 'name')).toEqual('Alexandre');
+    });
+
+    it('should be inserted when called with a key', () => {
+      const store = createMockStore({ schema });
+
+      const alexRef = store.get('User', 'me', { name: 'Alexandre'}) as Ref;
+
+      expect(store.get('User','me', 'name')).toEqual('Alexandre');
+    });
+
+    it('should not ovveride', () => {
+      const store = createMockStore({ schema });
+
+      store.set('User', 'me', 'name', 'Alexandre');
+      store.get('User', 'me', { name: 'Matthias'}) as Ref;
+
+      expect(store.get('User','me', 'name')).toEqual('Alexandre');
+    });
+  })
 });
