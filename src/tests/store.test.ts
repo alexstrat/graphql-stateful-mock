@@ -178,9 +178,7 @@ describe('MockStore', () => {
     const surnames = store.get('User', '123', 'surnames') as string[];
 
     expect(surnames).toBeInstanceOf(Array);
-    if (surnames.length > 0) {
-      expect(typeof surnames[0]).toBe('string');
-    }
+    expect(typeof surnames[0]).toBe('string');
   });
 
 
