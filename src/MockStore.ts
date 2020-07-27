@@ -79,24 +79,30 @@ export class MockStore implements IMockStore{
   set(
     _typeName: string | SetArgs,
     _key?: string,
-    _fieldName?: string,
+    _fieldName?: string | { [fieldName: string]: any },
     _value?: unknown
   ): void {
-
-    // agument normalization
-    let args: SetArgs;
-    if (typeof _typeName === 'string') {
-      assertIsDefined(_key, 'key was not provided');
-      assertIsDefined(_fieldName, 'fieldName was not provided');
-      args = {
-        typeName: _typeName,
-        key: _key,
-        fieldName: _fieldName,
-        value: _value,
-      }
-    } else {
-      args = _typeName;
+    if (typeof _typeName !== 'string') {
+      // set({...})
+      return this.setImpl(_typeName);
     }
+
+    assertIsDefined(_key, 'key was not provided');
+    let args: SetArgs = {
+      typeName: _typeName,
+      key: _key,
+    };
+
+    if (typeof _fieldName !=='string') {
+      // set('User', 1, { name: 'Foo' })
+      if (!isRecord(_fieldName)) throw new Error('Expected value to be a record');
+
+      args.value = _fieldName;
+      return this.setImpl(args);
+    }
+
+    args.fieldName = _fieldName;
+    args.value = _value;
 
     return this.setImpl(args);
   }
@@ -150,6 +156,21 @@ export class MockStore implements IMockStore{
  
   private setImpl(args: SetArgs) {
     const { typeName, key, fieldName, fieldArgs, value, noOverride } = args;
+    if (!fieldName) {
+      if (!isRecord(value)) {
+        throw new Error('When no `fieldName` is provided, `value` should be a record.')
+      }
+      for (let fieldName of Object.keys(value)) {
+        this.setImpl({
+          typeName,
+          key,
+          fieldName,
+          value: value[fieldName],
+          noOverride,
+        })
+      }
+      return;
+    } 
 
     let fieldNameInStore: string = getFieldNameInStore(fieldName, fieldArgs);
 

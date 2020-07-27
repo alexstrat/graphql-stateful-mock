@@ -43,14 +43,14 @@ export type GetArgs<KeyT = string> = {
 export type SetArgs<KeyT = string> = {
   typeName: string,
   key: KeyT,
-  fieldName: string,
+  fieldName?: string,
   /**
    * Optionnal arguments when querying the field.
    * 
    * @see GetArgs#fieldArgs
    */
   fieldArgs?: string | { [argName: string]: any },
-  value?: unknown,
+  value?: unknown | { [fieldName: string]: any },
   /**
    * If the value for this field is already set, it won't
    * be overriden.
@@ -139,6 +139,15 @@ export interface IMockStore {
     key: string,
     fieldName: string,
     value?: unknown
+  ): void;
+
+  /**
+   * Set the given field values to the type with key.
+   */
+  set(
+  typeName: string,
+  key: string,
+  values: { [fieldName: string]: any },
   ): void;
 }
 

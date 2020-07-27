@@ -191,6 +191,17 @@ describe('MockStore', () => {
     expect(friends[0]).toHaveProperty('$ref');
   });
 
+  it('should support multiple field set', () => {
+    const store = createMockStore({ schema });
+
+    store.set('User', 'me', {
+      name: 'Alexandre',
+      age: 31,
+    });
+
+    expect(store.get('User', 'me', 'name')).toEqual('Alexandre');
+  });
+
   it('should support nested set', () => {
     const store = createMockStore({ schema });
 
