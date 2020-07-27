@@ -2,7 +2,7 @@
 
 [![npm version](https://badge.fury.io/js/graphql-stateful-mock.svg)](https://badge.fury.io/js/graphql-stateful-mock)
 
-**🚧 still at proof of concept stage**
+**🚧 still at proof of concept stage: the API can change**
 
 Mock a GraphQL schema — but in a stateful way.
 
@@ -272,7 +272,7 @@ const schemaWithMocks = addMocksToSchema({
 ```
 
 ## Todos and caveats
-- [ ] Implement abstract and union types
+- [ ] Implement support for abstract and union types
 - [ ] fix `key` typing issues on `#set` with keys that are not string
 - [ ] `get('User', 1, ['friends', 'edges'])`
 - [ ] Add `preserveResolvers` option
