@@ -120,6 +120,25 @@ describe('MockStore', () => {
     expect(user1.$ref).not.toEqual(user2.$ref);
   });
 
+  it('should return a ref when called with no `fieldName`', () => {
+    const store = createMockStore({ schema });
+
+    const user = store.get('User', '123');
+
+    expect(user).toHaveProperty('$ref');
+    assertIsRef(user);
+
+    expect(user.$ref).toEqual('123');
+  })
+
+  it('should return a random ref when called with no `fieldName` nor `key`', () => {
+    const store = createMockStore({ schema });
+
+    const user = store.get('User');
+
+    expect(user).toHaveProperty('$ref');
+  })
+
   it('should respect provided mocks', () => {
     const store = createMockStore({
       schema,
@@ -298,7 +317,7 @@ describe('MockStore', () => {
       expect(store.get('User','me', 'name')).toEqual('Alexandre');
     });
 
-    it('should not ovveride', () => {
+    it('should not override', () => {
       const store = createMockStore({ schema });
 
       store.set('User', 'me', 'name', 'Alexandre');
