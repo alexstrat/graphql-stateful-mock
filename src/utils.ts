@@ -1,4 +1,4 @@
-import { Ref } from "./types";
+import { Ref, KeyTypeConstraints } from "./types";
 
 export function uuidv4() {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
@@ -13,6 +13,6 @@ export const randomListLength = () => 1 + Math.round(Math.random() * 10);
 
 export const takeRandom = <T>(arr: T[]) => arr[Math.floor(Math.random() * arr.length)];
 
-export function makeRef<KeyT = string>(key: KeyT): Ref<KeyT> {
+export function makeRef<KeyT extends KeyTypeConstraints = string>(key: KeyT): Ref<KeyT> {
   return { $ref: key };
 }

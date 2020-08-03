@@ -2,7 +2,7 @@ import { GraphQLSchema, isObjectType, isScalarType, getNullableType, isListType,
 import { assertIsDefined, isDefined } from 'ts-is-defined';
 import stringify from 'fast-json-stable-stringify';
 
-import { IMockStore, GetArgs, SetArgs, isRef, assertIsRef, Ref, isRecord, TypePolicy, Mocks } from './types';
+import { IMockStore, GetArgs, SetArgs, isRef, assertIsRef, Ref, isRecord, TypePolicy, Mocks, KeyTypeConstraints } from './types';
 import { uuidv4, randomListLength, takeRandom, makeRef } from './utils';
 import { throws } from 'assert';
 
@@ -39,9 +39,9 @@ export class MockStore implements IMockStore{
     this.typePolicies = typePolicies || {};
   }
 
-  get(
-    _typeName: string | GetArgs,
-    _key?: string | number | { [fieldName: string]: any },
+  get<KeyT extends KeyTypeConstraints>(
+    _typeName: string | GetArgs<KeyT>,
+    _key?: KeyT | { [fieldName: string]: any },
     _fieldName?: string | { [fieldName: string]: any },
     _fieldArgs?: string | { [argName: string]: any },
   ) {
@@ -50,7 +50,7 @@ export class MockStore implements IMockStore{
       return this.getImpl(_typeName);
     }
 
-    let args: GetArgs = {
+    let args: GetArgs<KeyT> = {
       typeName: _typeName,
     };
 
@@ -60,7 +60,6 @@ export class MockStore implements IMockStore{
       return this.getImpl(args);
     }
 
-    // @ts-ignore issues with key typing
     args.key = _key;
 
     if(typeof _fieldName !== 'string') {
@@ -76,8 +75,8 @@ export class MockStore implements IMockStore{
     return this.getImpl(args);
   }
 
-  set(
-    _typeName: string | SetArgs,
+  set<KeyT extends KeyTypeConstraints>(
+    _typeName: string | SetArgs<KeyT>,
     _key?: string,
     _fieldName?: string | { [fieldName: string]: any },
     _value?: unknown
@@ -88,12 +87,13 @@ export class MockStore implements IMockStore{
     }
 
     assertIsDefined(_key, 'key was not provided');
+
     let args: SetArgs = {
       typeName: _typeName,
       key: _key,
     };
 
-    if (typeof _fieldName !=='string') {
+    if (typeof _fieldName !== 'string') {
       // set('User', 1, { name: 'Foo' })
       if (!isRecord(_fieldName)) throw new Error('Expected value to be a record');
 
@@ -107,7 +107,7 @@ export class MockStore implements IMockStore{
     return this.setImpl(args);
   }
 
-  private getImpl(args: GetArgs) {
+  private getImpl<KeyT extends KeyTypeConstraints>(args: GetArgs<KeyT>) {
     const { typeName, key, fieldName, fieldArgs, defaultValue } = args;
 
     if(!fieldName) {
@@ -154,7 +154,7 @@ export class MockStore implements IMockStore{
     return this.store[typeName][key][fieldNameInStore];
   }
  
-  private setImpl(args: SetArgs) {
+  private setImpl<KeyT extends KeyTypeConstraints>(args: SetArgs<KeyT>) {
     const { typeName, key, fieldName, fieldArgs, value, noOverride } = args;
     if (!fieldName) {
       if (!isRecord(value)) {
@@ -227,10 +227,10 @@ export class MockStore implements IMockStore{
     };
   }
 
-  private insert(typeName: string, values: { [fieldName: string]: unknown }, noOverride?: boolean): Ref {
+  private insert<KeyT extends KeyTypeConstraints>(typeName: string, values: { [fieldName: string]: unknown }, noOverride?: boolean): Ref<KeyT> {
     const keyFieldName = this.getKeyFieldName(typeName);
 
-    let key: string;
+    let key: KeyT;
 
     // when we generate a key for the type, we might produce
     // other associated values with it
@@ -238,13 +238,13 @@ export class MockStore implements IMockStore{
     // for the ones that we areasked to insert
     let otherValues : {[fieldName: string]: unknown } = {};
 
-    if (isRef(values)) {
+    if (isRef<KeyT>(values)) {
       key = values.$ref;
     } else if (keyFieldName && keyFieldName in values) {
       // @ts-ignore we expect it to be valid
       key = values[keyFieldName];
     } else {
-      key = this.generateKeyForType(typeName, (otherFieldName, otherFieldValue) => {
+      key = this.generateKeyForType<KeyT>(typeName, (otherFieldName, otherFieldValue) => {
         otherValues[otherFieldName] = otherFieldValue;
       });
     }
@@ -297,16 +297,16 @@ export class MockStore implements IMockStore{
     return this.generateValueFromType(fieldType);
   }
 
-  private generateKeyForType(typeName: string, onOtherFieldsGenerated?: (fieldName: string, value: unknown) => void) {
+  private generateKeyForType<KeyT extends KeyTypeConstraints>(typeName: string, onOtherFieldsGenerated?: (fieldName: string, value: unknown) => void) {
     const keyFieldName = this.getKeyFieldName(typeName);
 
-    if (!keyFieldName) return uuidv4();
+    if (!keyFieldName) return uuidv4() as KeyT;
 
     return this.generateFieldValue(
       typeName,
       keyFieldName,
       onOtherFieldsGenerated,
-    ) as string;
+    ) as KeyT;
   }
 
 

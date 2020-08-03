@@ -5,6 +5,8 @@ export type Mocks = {
   { [fieldName: string]: () => unknown }
 };
 
+export type KeyTypeConstraints = string | number;
+
 export type TypePolicy = {
   /**
    * The name of the field that should be used as store `key`.
@@ -15,7 +17,7 @@ export type TypePolicy = {
   keyFieldName?: string | false;
 };
 
-export type GetArgs<KeyT = string> = {
+export type GetArgs<KeyT extends KeyTypeConstraints = string> = {
   typeName: string;
   key?: KeyT;
   fieldName?: string;
@@ -40,7 +42,7 @@ export type GetArgs<KeyT = string> = {
   defaultValue?: unknown | { [fieldName: string]: any },
 }
 
-export type SetArgs<KeyT = string> = {
+export type SetArgs<KeyT extends KeyTypeConstraints = string> = {
   typeName: string,
   key: KeyT,
   fieldName?: string,
@@ -81,11 +83,11 @@ export interface IMockStore {
    * > "Hello World"
    * ``` 
    */
-  get<KeyT = string>(args: GetArgs): unknown | Ref<KeyT>;
+  get<KeyT extends KeyTypeConstraints = string>(args: GetArgs): unknown | Ref<KeyT>;
   /**
    * Shorthand for `get({typeName, key, fieldName, fieldArgs})`.
    */
-  get<KeyT = string>(
+  get<KeyT extends KeyTypeConstraints = string>(
     typeName: string,
     key: KeyT,
     fieldName: string,
@@ -94,11 +96,12 @@ export interface IMockStore {
   /**
    * Get a reference to the type.
    */
-  get<KeyT = string>(
+  get<KeyT extends KeyTypeConstraints = string>(
     typeName: string,
-    key?: KeyT,
+    keyOrDefaultValue?: KeyT | { [fieldName: string]: any },
     defaultValue?: { [fieldName: string]: any },
   ): unknown | Ref<KeyT>;
+
   /**
    * Set a field value in the store for the given type, key and field
    * name — and optionnally field arguments.
@@ -129,14 +132,14 @@ export interface IMockStore {
    * });
    * ```
    */
-  set(args: SetArgs): void;
+  set<KeyT extends KeyTypeConstraints = string>(args: SetArgs<KeyT>): void;
 
   /**
    * Shorthand for `set({typeName, key, fieldName, value})`.
    */
-  set(
+  set<KeyT extends KeyTypeConstraints = string>(
     typeName: string,
-    key: string,
+    key: KeyT,
     fieldName: string,
     value?: unknown
   ): void;
@@ -144,22 +147,22 @@ export interface IMockStore {
   /**
    * Set the given field values to the type with key.
    */
-  set(
+  set<KeyT extends KeyTypeConstraints = string>(
   typeName: string,
-  key: string,
+    key: KeyT,
   values: { [fieldName: string]: any },
   ): void;
 }
 
-export type Ref<KeyT = string> = {
+export type Ref<KeyT extends KeyTypeConstraints = string> = {
   $ref: KeyT,
 };
 
-export function isRef<KeyT = string>(maybeRef: unknown): maybeRef is Ref<KeyT> {
+export function isRef<KeyT extends KeyTypeConstraints = string>(maybeRef: unknown): maybeRef is Ref<KeyT> {
   return maybeRef && typeof maybeRef === 'object' && maybeRef.hasOwnProperty('$ref');
 };
 
-export function assertIsRef<KeyT = string>(maybeRef: unknown, message?: string): asserts maybeRef is Ref<KeyT> {
+export function assertIsRef<KeyT extends KeyTypeConstraints = string>(maybeRef: unknown, message?: string): asserts maybeRef is Ref<KeyT> {
   if (!isRef(maybeRef)) {
     throw new Error(message || `Expected ${maybeRef} to be a valid Ref.`);
   }

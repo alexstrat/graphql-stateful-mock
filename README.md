@@ -273,7 +273,6 @@ const schemaWithMocks = addMocksToSchema({
 
 ## Todos and caveats
 - [ ] Implement support for abstract and union types
-- [ ] fix `key` typing issues on `#set` with keys that are not string
 - [ ] `get('User', 1, ['friends', 'edges'])`
 - [ ] Add `preserveResolvers` option
 
