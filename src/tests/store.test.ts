@@ -139,6 +139,14 @@ describe('MockStore', () => {
     expect(user).toHaveProperty('$ref');
   })
 
+  it('should support multiple `fieldnames` for ref traversal', () => {
+    const store = createMockStore({ schema });
+
+    const friends = store.get('Query', 'ROOT', ['viewer', 'friends']);
+
+    expect(Array.isArray(friends)).toBeTruthy();
+  })
+
   it('should respect provided mocks', () => {
     const store = createMockStore({
       schema,

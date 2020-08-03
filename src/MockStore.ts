@@ -42,9 +42,9 @@ export class MockStore implements IMockStore{
   get<KeyT extends KeyTypeConstraints>(
     _typeName: string | GetArgs<KeyT>,
     _key?: KeyT | { [fieldName: string]: any },
-    _fieldName?: string | { [fieldName: string]: any },
+    _fieldName?: string | string[] | { [fieldName: string]: any },
     _fieldArgs?: string | { [argName: string]: any },
-  ) {
+  ): unknown | Ref {
     if (typeof _typeName !== 'string') {
       // get({...})
       return this.getImpl(_typeName);
@@ -62,10 +62,26 @@ export class MockStore implements IMockStore{
 
     args.key = _key;
 
-    if(typeof _fieldName !== 'string') {
+    if (Array.isArray(_fieldName) && _fieldName.length === 1) {
+      _fieldName = _fieldName[0];
+    }
+
+    if (typeof _fieldName !== 'string' && !Array.isArray(_fieldName)) {
       // get('User', 'me', { name: 'Alex'})
       args.defaultValue = _fieldName;
       return this.getImpl(args);
+    }
+
+    if (Array.isArray(_fieldName)) {
+      // get('User', 'me', ['father', 'name'])
+      const ref: unknown = this.get(_typeName, _key, _fieldName[0], _fieldArgs);
+      assertIsRef(ref);
+
+      // todo: would but much easier of `refs` would contains the references typename
+      const fieldType = getNullableType(this.getFieldType(_typeName, _fieldName[0]));
+      if (!isObjectType(fieldType)) throw new Error(`'${_fieldName[0]}' on '${ _typeName}' is not an Object Type`);
+
+      return this.get(fieldType.name, ref.$ref, _fieldName.slice(1, _fieldName.length));
     }
 
     // get('User', 'me', 'name'...);
@@ -77,7 +93,7 @@ export class MockStore implements IMockStore{
 
   set<KeyT extends KeyTypeConstraints>(
     _typeName: string | SetArgs<KeyT>,
-    _key?: string,
+    _key?: KeyT,
     _fieldName?: string | { [fieldName: string]: any },
     _value?: unknown
   ): void {
@@ -88,7 +104,7 @@ export class MockStore implements IMockStore{
 
     assertIsDefined(_key, 'key was not provided');
 
-    let args: SetArgs = {
+    let args: SetArgs<KeyT> = {
       typeName: _typeName,
       key: _key,
     };

@@ -90,9 +90,9 @@ export interface IMockStore {
   get<KeyT extends KeyTypeConstraints = string>(
     typeName: string,
     key: KeyT,
-    fieldName: string,
+    fieldNameOrFieldNames: string | string[],
     fieldArgs?: string | { [argName: string]: any },
-  ): unknown | Ref<KeyT>;
+  ): unknown | Ref;
   /**
    * Get a reference to the type.
    */
@@ -148,9 +148,9 @@ export interface IMockStore {
    * Set the given field values to the type with key.
    */
   set<KeyT extends KeyTypeConstraints = string>(
-  typeName: string,
+    typeName: string,
     key: KeyT,
-  values: { [fieldName: string]: any },
+    values: { [fieldName: string]: any },
   ): void;
 }
 
