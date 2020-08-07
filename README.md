@@ -93,7 +93,7 @@ const mocks = {
 }
 ```
 
-Optionally, you can specify default field values for the elements of the list:
+Optionally, you can specify field values for the elements of the list:
 
 ```ts
 const mocks = {
