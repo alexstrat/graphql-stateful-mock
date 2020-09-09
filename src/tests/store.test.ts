@@ -128,7 +128,7 @@ describe('MockStore', () => {
     expect(user).toHaveProperty('$ref');
     assertIsRef(user);
 
-    expect(user.$ref).toEqual('123');
+    expect(user.$ref.key).toEqual('123');
   })
 
   it('should return a random ref when called with no `fieldName` nor `key`', () => {
@@ -190,7 +190,7 @@ describe('MockStore', () => {
 
     const friendsRefs = store.get('User', '123', 'friends') as Ref[];
     expect(friendsRefs).toHaveLength(2);
-    const friendsAges = friendsRefs.map(ref => store.get('User', ref.$ref, 'age')).sort();
+    const friendsAges = friendsRefs.map(ref => store.get('User', ref.$ref.key, 'age')).sort();
     expect(friendsAges).toEqual([21, 22]);
   });
 
@@ -238,7 +238,7 @@ describe('MockStore', () => {
       age: 31,
     });
 
-    expect(store.get('Query', 'ROOT', 'viewer')).toEqual({ $ref: 'me' });
+    expect(store.get('Query', 'ROOT', 'viewer')).toEqual({ $ref: { key: 'me', typeName: 'User' }});
     expect(store.get('User', 'me', 'name')).toEqual('Alexandre');
   });
 
@@ -253,7 +253,7 @@ describe('MockStore', () => {
       name: 'Alexandre',
     });
 
-    expect(store.get('Query', 'ROOT', 'viewer')).toEqual({ $ref: 'me' });
+    expect(store.get('Query', 'ROOT', 'viewer')).toEqual({ $ref: { key: 'me', typeName: 'User' } });
     expect(store.get('User', 'me', 'name')).toEqual('Alexandre');
   });
 
@@ -272,7 +272,7 @@ describe('MockStore', () => {
     const myFriendsRefs = store.get('User', 'me', 'friends') as Ref[];
     expect(myFriendsRefs).toHaveLength(3);
 
-    const MyFriendsNames = myFriendsRefs.map(ref => store.get('User', ref.$ref, 'name')).sort();
+    const MyFriendsNames = myFriendsRefs.map(ref => store.get('User', ref.$ref.key, 'name')).sort();
     expect(MyFriendsNames).toEqual(['Nico', 'Ross', 'Trev']);
   });
 
@@ -305,7 +305,7 @@ describe('MockStore', () => {
 
     const store = createMockStore({ schema });
     const user = store.get('Query', 'ROOT', 'viewer') as Ref<number>;
-    expect(typeof user.$ref).toBe('number');
+    expect(typeof user.$ref.key).toBe('number');
   });
 
   describe('default values', () => {
@@ -314,7 +314,7 @@ describe('MockStore', () => {
 
       const alexRef = store.get('User', { name: 'Alexandre'}) as Ref;
 
-      expect(store.get('User', alexRef.$ref, 'name')).toEqual('Alexandre');
+      expect(store.get('User', alexRef.$ref.key, 'name')).toEqual('Alexandre');
     });
 
     it('should be inserted when called with a key', () => {

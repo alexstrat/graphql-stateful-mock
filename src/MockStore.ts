@@ -77,11 +77,7 @@ export class MockStore implements IMockStore{
       const ref: unknown = this.get(_typeName, _key, _fieldName[0], _fieldArgs);
       assertIsRef(ref);
 
-      // todo: would but much easier of `refs` would contains the references typename
-      const fieldType = getNullableType(this.getFieldType(_typeName, _fieldName[0]));
-      if (!isObjectType(fieldType)) throw new Error(`'${_fieldName[0]}' on '${ _typeName}' is not an Object Type`);
-
-      return this.get(fieldType.name, ref.$ref, _fieldName.slice(1, _fieldName.length));
+      return this.get(ref.$ref.typeName, ref.$ref.key, _fieldName.slice(1, _fieldName.length));
     }
 
     // get('User', 'me', 'name'...);
@@ -133,7 +129,7 @@ export class MockStore implements IMockStore{
       let valuesToInsert = defaultValue ? defaultValue : {};
 
       if (key) {
-        valuesToInsert = { ...valuesToInsert, ...makeRef(key) };
+        valuesToInsert = { ...valuesToInsert, ...makeRef(typeName, key) };
       }
 
       return this.insert(typeName, valuesToInsert, true);
@@ -255,7 +251,7 @@ export class MockStore implements IMockStore{
     let otherValues : {[fieldName: string]: unknown } = {};
 
     if (isRef<KeyT>(values)) {
-      key = values.$ref;
+      key = values.$ref.key;
     } else if (keyFieldName && keyFieldName in values) {
       // @ts-ignore we expect it to be valid
       key = values[keyFieldName];
@@ -277,7 +273,7 @@ export class MockStore implements IMockStore{
       });
     };
 
-    return { $ref: key };
+    return makeRef(typeName, key);
   }
 
   private generateFieldValue(

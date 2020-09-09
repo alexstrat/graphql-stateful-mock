@@ -155,7 +155,10 @@ export interface IMockStore {
 }
 
 export type Ref<KeyT extends KeyTypeConstraints = string> = {
-  $ref: KeyT,
+  $ref: {
+    key: KeyT;
+    typeName: string;
+  },
 };
 
 export function isRef<KeyT extends KeyTypeConstraints = string>(maybeRef: unknown): maybeRef is Ref<KeyT> {

@@ -73,8 +73,8 @@ export function addMocksToSchema({ schema, store, resolvers }: IMockOptions): Gr
   const mockResolver:GraphQLFieldResolver<any, any> = (source, args, contex, info) => {
     if (isRef(source)) {
       return store.get({
-        typeName: info.parentType.name,
-        key: source.$ref,
+        typeName: source.$ref.typeName,
+        key: source.$ref.key,
         fieldName: info.fieldName,
         fieldArgs: args,
       });

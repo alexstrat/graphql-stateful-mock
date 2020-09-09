@@ -13,6 +13,6 @@ export const randomListLength = () => 1 + Math.round(Math.random() * 10);
 
 export const takeRandom = <T>(arr: T[]) => arr[Math.floor(Math.random() * arr.length)];
 
-export function makeRef<KeyT extends KeyTypeConstraints = string>(key: KeyT): Ref<KeyT> {
-  return { $ref: key };
+export function makeRef<KeyT extends KeyTypeConstraints = string>(typeName: string, key: KeyT): Ref<KeyT> {
+  return { $ref: { key, typeName} };
 }

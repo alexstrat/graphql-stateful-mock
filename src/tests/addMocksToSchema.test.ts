@@ -62,7 +62,7 @@ describe('addMocksToSchema', () => {
           const viewer = store.get('Query', 'ROOT', 'viewer');
           assertIsRef(viewer);
 
-          store.set('User', viewer.$ref, 'name', newName);
+          store.set('User', viewer.$ref.key, 'name', newName);
           return store.get('Query', 'ROOT', 'viewer');
         }
       }
