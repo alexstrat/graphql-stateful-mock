@@ -156,7 +156,7 @@ store.set('Query', 'ROOT', 'viewer', { name: newName });
 
 // is equivalent to:
 const viewerUserRef = store.get('Query', 'ROOT', `viewer`) as Ref;
-store.set('User', viewerUserRef.$ref, 'name', newName);
+store.set('User', viewerUserRef.$ref.key, 'name', newName);
 ```
 
 ### Handling `*byId` fields
@@ -213,7 +213,7 @@ const schemaWithMocks = addMocksToSchema({
       friends: (parent, { offset, limit }) => {
         // `addMocksToSchema` resolver will pass a `Ref` as `parent`
         // it contains a key to the `User` we are dealing with
-        const userKey = src.$ref;
+        const userKey = src.$ref.key;
 
         // this will generate and store a list of `Ref`s to some `User`s
         // next time we go thru this resolver (with same parent), the list
@@ -257,10 +257,10 @@ const schemaWithMocks = addMocksToSchema({
   resolvers: {
     User: {
       friends: (parent, { offset, limit }) => {
-        const userKey = src.$ref;
+        const userKey = src.$ref.key;
 
         const connectionRef = store.get('User', userKey, 'friends');
-        const edgesFullList =  store.get('FriendsConnection', connectionRef.$ref, 'edges');
+        const edgesFullList =  store.get('FriendsConnection', connectionRef.$ref.key, 'edges');
 
         return {
           totalCount: edgesFullList.length,

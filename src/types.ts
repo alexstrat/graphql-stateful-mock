@@ -78,7 +78,7 @@ export interface IMockStore {
    * Example:
    * ```ts
    * store.get('Query', 'ROOT', 'viewer');
-   * > { $ref: 'abc-737dh-djdjd' }
+   * > { $ref: { key: 'abc-737dh-djdjd', typeName: 'User' } }
    * store.get('User', 'abc-737dh-djdjd', 'name')
    * > "Hello World"
    * ``` 

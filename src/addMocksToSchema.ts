@@ -57,7 +57,7 @@ type IMockOptions = {
  *     Mutation: {
  *       setMyName: (_, { newName }) => {
  *          const { $ref } = store.get('Query', 'ROOT', 'viewer');
- *          store.set('User', $ref, 'name', newName);
+ *          store.set('User', $ref.key, 'name', newName);
  *          return { $ref };
  *       }
  *     }
