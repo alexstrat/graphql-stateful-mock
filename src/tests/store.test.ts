@@ -1,6 +1,7 @@
 import { buildSchema } from 'graphql';
 import { createMockStore } from '..';
 import { assertIsRef, Ref } from '../types';
+import { makeRef } from '../utils';
 
 const typeDefs = `
 type User {
@@ -147,6 +148,11 @@ describe('MockStore', () => {
     expect(Array.isArray(friends)).toBeTruthy();
   })
 
+  it('should support passing a ref as first argument', () => {
+    const store = createMockStore({ schema });
+    expect(store.get(makeRef('User', '123'), 'name')).toEqual('Hello World');
+  })
+
   it('should respect provided mocks', () => {
     const store = createMockStore({
       schema,
@@ -229,6 +235,13 @@ describe('MockStore', () => {
     expect(store.get('User', 'me', 'name')).toEqual('Alexandre');
   });
 
+  it('should set with a ref', () => {
+    const store = createMockStore({ schema });
+
+    store.set(makeRef('User', 'me'), 'name', 'Alexandre');
+    expect(store.get('User', 'me', 'name')).toEqual('Alexandre');
+  });
+
   it('should support nested set', () => {
     const store = createMockStore({ schema });
 
@@ -239,6 +252,13 @@ describe('MockStore', () => {
     });
 
     expect(store.get('Query', 'ROOT', 'viewer')).toEqual({ $ref: { key: 'me', typeName: 'User' }});
+    expect(store.get('User', 'me', 'name')).toEqual('Alexandre');
+  });
+
+  it('should support nested set with a ref', () => {
+    const store = createMockStore({ schema });
+
+    store.set(makeRef('User', 'me'), { name: 'Alexandre'});
     expect(store.get('User', 'me', 'name')).toEqual('Alexandre');
   });
 

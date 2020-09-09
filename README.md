@@ -155,8 +155,8 @@ Note the sugar signature of `set`:
 store.set('Query', 'ROOT', 'viewer', { name: newName });
 
 // is equivalent to:
-const viewerUserRef = store.get('Query', 'ROOT', `viewer`) as Ref;
-store.set('User', viewerUserRef.$ref.key, 'name', newName);
+const viewerRef = store.get('Query', 'ROOT', `viewer`) as Ref;
+store.set(viewerRef, 'name', newName);
 ```
 
 ### Handling `*byId` fields
@@ -210,15 +210,13 @@ const schemaWithMocks = addMocksToSchema({
   store,
   resolvers: {
     User: {
-      friends: (parent, { offset, limit }) => {
-        // `addMocksToSchema` resolver will pass a `Ref` as `parent`
-        // it contains a key to the `User` we are dealing with
-        const userKey = src.$ref.key;
-
+      // `addMocksToSchema` resolver will pass a `Ref` as `parent`
+      // it contains a key to the `User` we are dealing with
+      friends: (userRef, { offset, limit }) => {
         // this will generate and store a list of `Ref`s to some `User`s
         // next time we go thru this resolver (with same parent), the list
         // will be the same
-        const fullList = store.get('User', userKey, 'friends') as Ref[];
+        const fullList = store.get(userRef, 'friends') as Ref[];
 
         // actually apply pagination slicing
         return fullList.slice(offset, offset + limit)
@@ -256,11 +254,9 @@ const schemaWithMocks = addMocksToSchema({
   store,
   resolvers: {
     User: {
-      friends: (parent, { offset, limit }) => {
-        const userKey = src.$ref.key;
+      friends: (userRef, { offset, limit }) => {
 
-        const connectionRef = store.get('User', userKey, 'friends');
-        const edgesFullList =  store.get('FriendsConnection', connectionRef.$ref.key, 'edges');
+        const connectionRef = store.get(userRef, 'friends', 'edges');
 
         return {
           totalCount: edgesFullList.length,

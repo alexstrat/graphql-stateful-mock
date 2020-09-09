@@ -39,15 +39,29 @@ export class MockStore implements IMockStore{
     this.typePolicies = typePolicies || {};
   }
 
-  get<KeyT extends KeyTypeConstraints>(
-    _typeName: string | GetArgs<KeyT>,
-    _key?: KeyT | { [fieldName: string]: any },
-    _fieldName?: string | string[] | { [fieldName: string]: any },
+  get<KeyT extends KeyTypeConstraints = string, ReturnKeyT extends KeyTypeConstraints = string>(
+    _typeName: string | Ref<KeyT> | GetArgs<KeyT>,
+    _key?: KeyT | { [fieldName: string]: any } | string | string[],
+    _fieldName?: string | string[] | { [fieldName: string]: any } | string | { [argName: string]: any },
     _fieldArgs?: string | { [argName: string]: any },
-  ): unknown | Ref {
+  ): unknown | Ref<ReturnKeyT> {
     if (typeof _typeName !== 'string') {
-      // get({...})
-      return this.getImpl(_typeName);
+      if (_key === undefined) {
+        if (isRef<KeyT>(_typeName)) {
+          throw new Error('Can\'t provide a ref as first arguement and no other argument');
+        }
+        // get({...})
+        return this.getImpl(_typeName);
+      } else {
+        assertIsRef<KeyT>(_typeName);
+        const { $ref } = _typeName;
+
+        // arguments shift
+        _fieldArgs = _fieldName;
+        _fieldName = _key as string | string[] ;
+        _key = $ref.key;
+        _typeName = $ref.typeName;
+      }
     }
 
     let args: GetArgs<KeyT> = {
@@ -60,7 +74,7 @@ export class MockStore implements IMockStore{
       return this.getImpl(args);
     }
 
-    args.key = _key;
+    args.key = _key as KeyT;
 
     if (Array.isArray(_fieldName) && _fieldName.length === 1) {
       _fieldName = _fieldName[0];
@@ -88,21 +102,35 @@ export class MockStore implements IMockStore{
   }
 
   set<KeyT extends KeyTypeConstraints>(
-    _typeName: string | SetArgs<KeyT>,
-    _key?: KeyT,
-    _fieldName?: string | { [fieldName: string]: any },
+    _typeName: string | Ref<KeyT> | SetArgs<KeyT>,
+    _key?: KeyT | string | { [fieldName: string]: any },
+    _fieldName?: string | { [fieldName: string]: any } | unknown,
     _value?: unknown
   ): void {
     if (typeof _typeName !== 'string') {
-      // set({...})
-      return this.setImpl(_typeName);
+      if (_key === undefined) {
+        if (isRef<KeyT>(_typeName)) {
+          throw new Error('Can\'t provide a ref as first arguement and no other argument');
+        }
+        // set({...})
+        return this.setImpl(_typeName);
+      } else {
+        assertIsRef<KeyT>(_typeName);
+        const { $ref } = _typeName;
+
+        // arguments shift
+        _value = _fieldName;
+        _fieldName = _key;
+        _key = $ref.key;
+        _typeName = $ref.typeName;
+      }
     }
 
     assertIsDefined(_key, 'key was not provided');
 
     let args: SetArgs<KeyT> = {
       typeName: _typeName,
-      key: _key,
+      key: _key as KeyT,
     };
 
     if (typeof _fieldName !== 'string') {

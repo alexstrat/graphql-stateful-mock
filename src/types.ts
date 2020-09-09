@@ -83,16 +83,16 @@ export interface IMockStore {
    * > "Hello World"
    * ``` 
    */
-  get<KeyT extends KeyTypeConstraints = string>(args: GetArgs): unknown | Ref<KeyT>;
+  get<KeyT extends KeyTypeConstraints = string, ReturnKeyT extends KeyTypeConstraints = string>(args: GetArgs<KeyT>): unknown | Ref<ReturnKeyT>;
   /**
    * Shorthand for `get({typeName, key, fieldName, fieldArgs})`.
    */
-  get<KeyT extends KeyTypeConstraints = string>(
+  get<KeyT extends KeyTypeConstraints = string, ReturnKeyT extends KeyTypeConstraints = string>(
     typeName: string,
     key: KeyT,
     fieldNameOrFieldNames: string | string[],
     fieldArgs?: string | { [argName: string]: any },
-  ): unknown | Ref;
+  ): unknown | Ref<ReturnKeyT>;
   /**
    * Get a reference to the type.
    */
@@ -101,6 +101,18 @@ export interface IMockStore {
     keyOrDefaultValue?: KeyT | { [fieldName: string]: any },
     defaultValue?: { [fieldName: string]: any },
   ): unknown | Ref<KeyT>;
+
+  /**
+   * Shorthand for `get({typeName: ref.$ref.typeName, key: ref.$ref.key, fieldName, fieldArgs})`
+   * @param ref 
+   * @param fieldNameOrFieldNames 
+   * @param fieldArgs 
+   */
+  get<KeyT extends KeyTypeConstraints = string, ReturnKeyT extends KeyTypeConstraints = string>(
+    ref: Ref<KeyT>,
+    fieldNameOrFieldNames: string | string[],
+    fieldArgs?: string | { [argName: string]: any },
+  ): unknown | Ref<ReturnKeyT>;
 
   /**
    * Set a field value in the store for the given type, key and field
@@ -152,6 +164,26 @@ export interface IMockStore {
     key: KeyT,
     values: { [fieldName: string]: any },
   ): void;
+
+
+  /**
+   * Shorthand for `set({ref.$ref.typeName, ref.$ref.key, fieldName, value})`.
+   */
+  set<KeyT extends KeyTypeConstraints = string>(
+    ref: Ref<KeyT>,
+    fieldName: string,
+    value?: unknown
+  ): void;
+
+  /**
+   * Set the given field values to the type with ref.
+   */
+  set<KeyT extends KeyTypeConstraints = string>(
+    ref: Ref<KeyT>,
+    values: { [fieldName: string]: any },
+  ): void;
+
+
 }
 
 export type Ref<KeyT extends KeyTypeConstraints = string> = {
