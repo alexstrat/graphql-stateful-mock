@@ -107,6 +107,22 @@ const mocks = {
 }
 ```
 
+#### Union types
+If you'd like to provide a mock for an `Union` type, you need to provide the type with an extra `__typename`.
+
+```ts
+const typeDefs = `
+  ...
+  union Result = User | Book
+`;
+const mocks = {
+  Result: () => ({
+    __typename: 'User',
+    name: casual.name(),
+  })
+}
+```
+
 ### Appplying mutations
 
 Use `resolvers` option of `addMocksToSchema` to implement custom resolvers that interact with the store, especially
@@ -268,7 +284,7 @@ const schemaWithMocks = addMocksToSchema({
 ```
 
 ## Todos and caveats
-- [ ] Implement support for abstract and union types
+- [ ] Implement support for interface type
 - [ ] Add `preserveResolvers` option
 
 ## Related

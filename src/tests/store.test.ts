@@ -13,6 +13,18 @@ type User {
   friends: [User!]!
 
   sex: Sex
+
+  image: UserImage!
+}
+
+union UserImage = UserImageSolidColor | UserImageURL
+
+type UserImageSolidColor {
+  color: String!
+}
+
+type UserImageURL {
+  url: String!
 }
 
 enum Sex {
@@ -352,6 +364,50 @@ describe('MockStore', () => {
       store.get('User', 'me', { name: 'Matthias'}) as Ref;
 
       expect(store.get('User','me', 'name')).toEqual('Alexandre');
+    });
+
+    describe('union types', () => {
+      it('should work without mocks', () => {
+        const store = createMockStore({ schema });
+  
+        const imageRef = store.get('User', 'me', 'image') as Ref;
+
+        expect(['UserImageSolidColor', 'UserImageURL'].includes(imageRef.$ref.typeName)).toBeTruthy()
+      });
+
+      it('should work with mocks', () => {
+        const store = createMockStore({
+          schema,
+          mocks: {
+            UserImage: () => {
+              return {
+              __typename: 'UserImageSolidColor',
+              color: 'white',
+            }
+          }
+          }
+        });
+  
+        const imageRef = store.get('User', 'me', 'image') as Ref;
+
+        expect(imageRef.$ref.typeName).toEqual('UserImageSolidColor');
+        expect(store.get(imageRef, 'color')).toEqual('white')
+      });
+
+      it('should let nested sets', () => {
+        const store = createMockStore({ schema });
+
+        store.set('User', 'me', {
+          image: {
+            __typename: 'UserImageSolidColor',
+            color: 'white',
+          }
+        });
+        const imageRef = store.get('User', 'me', 'image') as Ref;
+
+        expect(imageRef.$ref.typeName).toEqual('UserImageSolidColor');
+        expect(store.get(imageRef, 'color')).toEqual('white')
+      })
     });
   })
 });

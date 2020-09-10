@@ -1,4 +1,4 @@
-import { GraphQLSchema, isObjectType, isScalarType, getNullableType, isListType, GraphQLOutputType, isEnumType } from 'graphql';
+import { GraphQLSchema, isObjectType, isScalarType, getNullableType, isListType, GraphQLOutputType, isEnumType, isUnionType, isAbstractType } from 'graphql';
 import { assertIsDefined, isDefined } from 'ts-is-defined';
 import stringify from 'fast-json-stable-stringify';
 
@@ -235,10 +235,22 @@ export class MockStore implements IMockStore{
     const fieldType = getNullableType(this.getFieldType(typeName, fieldName));
     
     // deal with nesting
-    if (isObjectType(fieldType) && isDefined(value)) {
+    if ((isObjectType(fieldType) || isUnionType(fieldType)) && isDefined(value)) {
       if (!isRecord(value)) throw new Error(`Value to set for ${typeName}.${fieldName} should be an object or null or undefined`);
       assertIsDefined(value, 'Should not be null at this point');
-      const joinedTypeName = fieldType.name;
+      let joinedTypeName;
+      if (isUnionType(fieldType)) {
+        if (isRef(value)) {
+          joinedTypeName = value.$ref.typeName;
+        } else {
+          if (typeof value['__typename'] !== 'string') {
+            throw new Error(`Value to set for ${typeName}.${fieldName} should contain a '__typename' because the return type ${fieldType.name} is abstract`);
+          }
+          joinedTypeName = value['__typename'];
+        }
+      } else {
+        joinedTypeName = fieldType.name;
+      }
 
       const currentValue = this.store[typeName][key][fieldNameInStore];
       valueToStore = this.insert(
@@ -246,15 +258,35 @@ export class MockStore implements IMockStore{
           isRef(currentValue) ? { ...currentValue, ...value } : value,
           noOverride
         );
-    } else if (isListType(fieldType) && isObjectType(getNullableType(fieldType.ofType)) && isDefined(value)){
+    } else if (isListType(fieldType) && (isObjectType(getNullableType(fieldType.ofType)) || isUnionType(getNullableType(fieldType.ofType))) && isDefined(value)){
       if (!Array.isArray(value)) throw new Error(`Value to set for ${typeName}.${fieldName} should be an array or null or undefined`);
 
-      const joinedTypeName = getNullableType(fieldType.ofType).name;
+      const nonNullableItemType = getNullableType(fieldType.ofType);
 
       valueToStore = value.map((v, index) => {
         if (v === null) return null;
-        if (v !== undefined && typeof v !== 'object' ) throw new Error(`Value to set for ${typeName}.${fieldName}[${index}] should be an object or null or undefined but got ${v}`);
+        if (v !== undefined && !isRecord(v)) throw new Error(`Value to set for ${typeName}.${fieldName}[${index}] should be an object or null or undefined but got ${v}`);
+
         // if v is undefined (empty array slot) it means we just want to generate something
+        let joinedTypeName;
+        if (isUnionType(nonNullableItemType)) {
+          if (!v) {
+            // no value so no typename => take one randomly
+            joinedTypeName = takeRandom(nonNullableItemType.getTypes().map(t => t.name));
+          } else {
+            if (isRef(v)) {
+              joinedTypeName = v.$ref.typeName;
+            } else {
+              if (typeof v['__typename'] !== 'string') {
+                throw new Error(`Value to set for ${typeName}.${fieldName}[${index}] should contain a '__typename' because the return type ${nonNullableItemType.name} is abstract`);
+              }
+              joinedTypeName = v['__typename'];
+            }
+          }
+        } else {
+          joinedTypeName = getNullableType(fieldType.ofType).name;
+        }
+
         return this.insert(joinedTypeName, v || {}, noOverride);
       });
     } else {
@@ -292,6 +324,7 @@ export class MockStore implements IMockStore{
     const toInsert = { ...otherValues, ...values };
     for (const fieldName of Object.keys(toInsert)) {
       if (fieldName === '$ref') continue;
+      if (fieldName === '__typename') continue;
       this.set({
         typeName,
         key,
@@ -365,6 +398,42 @@ export class MockStore implements IMockStore{
       return this.insert(nullableType.name, {});
     } else if (isListType(nullableType)) {
       return [...new Array(randomListLength())].map(() => this.generateValueFromType(nullableType.ofType));
+    } else if (isUnionType(nullableType)) {
+      const mock = this.mocks[nullableType.name];
+
+      let typeName: string;
+      let values: {[key: string]: unknown} = {};
+      if (!mock) {
+        typeName = takeRandom(nullableType.getTypes().map(t => t.name));
+      } else if (typeof mock === 'function') {
+        const mockRes = mock();
+        if (mockRes === null) return null;
+
+        if (!isRecord(mockRes)) {
+          throw new Error(`Value returned by the mock for ${nullableType.name} is not an object or null`);
+        }
+
+        values = mockRes;
+        if (typeof values['__typename'] !== 'string') {
+          throw new Error(`Value returned by the mock for abstract type ${nullableType.name} does not contain any '__typename'`);
+        }
+        typeName = values['__typename'];
+      } else if (typeof mock['__typename'] === 'function') {
+        const mockRes = mock['__typename']();
+        if (typeof mockRes !== 'string') throw new Error(`'__typename' returned by the mock for abstract type ${nullableType.name} is not a string`);
+        typeName = mockRes;
+      } else {
+        throw new Error(`Value returned by the mock for abstract type ${nullableType.name} does not contain any '__typename'`);
+      }
+
+      const ref = this.generateValueFromType(this.getType(typeName)) as Ref;
+
+      for (const fieldName of Object.keys(values)) {
+        if (fieldName === '__typename') continue;
+        this.set(ref, fieldName, (values as any)[fieldName]);
+      }
+
+      return ref;
     } else {
       throw new Error(`${nullableType} not implemented`,);
     }

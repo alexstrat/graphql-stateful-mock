@@ -6,6 +6,17 @@ type User {
   id: ID!
   age: Int!
   name: String!
+  image: UserImage!
+}
+
+union UserImage = UserImageSolidColor | UserImageURL
+
+type UserImageSolidColor {
+  color: String!
+}
+
+type UserImageURL {
+  url: String!
 }
 
 type Query {
@@ -113,4 +124,34 @@ describe('addMocksToSchema', () => {
     expect(data).toBeDefined();
     expect(data!['user1']['id']).not.toEqual(data!['user2']['id']);
   });
+
+  it('should handle union type', async () => {
+    const query = `
+      query {
+        viewer {
+          image {
+            __typename
+            ... on UserImageURL {
+              url
+            }
+            ... on UserImageSolidColor {
+              color
+            }
+          }
+        }
+      }
+      `;
+    const store = createMockStore({ schema });
+
+    const mockedSchema = addMocksToSchema({ schema, store });
+    const { data, errors } = await graphql({
+      schema: mockedSchema,
+      source: query,
+    });
+
+
+    expect(errors).not.toBeDefined();
+    expect(data).toBeDefined();
+    expect(data!['viewer']['image']['__typename']).toBeDefined();
+  })
 });
