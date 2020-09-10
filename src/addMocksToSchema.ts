@@ -1,7 +1,7 @@
-import { GraphQLSchema, GraphQLFieldResolver, defaultFieldResolver, GraphQLObjectType } from 'graphql';
+import { GraphQLSchema, GraphQLFieldResolver, defaultFieldResolver, GraphQLObjectType, GraphQLTypeResolver, isUnionType, GraphQLUnionType } from 'graphql';
 import { mapSchema, MapperKind, IResolvers } from '@graphql-tools/utils';
 import { addResolversToSchema } from '@graphql-tools/schema';
-import { isRef, IMockStore } from './types';
+import { isRef, IMockStore, assertIsRef } from './types';
 
 type IMockOptions = {
   schema: GraphQLSchema,
@@ -56,9 +56,9 @@ type IMockOptions = {
  *   resolvers: {
  *     Mutation: {
  *       setMyName: (_, { newName }) => {
- *          const { $ref } = store.get('Query', 'ROOT', 'viewer');
- *          store.set('User', $ref, 'name', newName);
- *          return { $ref };
+ *          const ref = store.get('Query', 'ROOT', 'viewer');
+ *          store.set(ref, 'name', newName);
+ *          return ref;
  *       }
  *     }
  *   }
@@ -73,8 +73,8 @@ export function addMocksToSchema({ schema, store, resolvers }: IMockOptions): Gr
   const mockResolver:GraphQLFieldResolver<any, any> = (source, args, contex, info) => {
     if (isRef(source)) {
       return store.get({
-        typeName: info.parentType.name,
-        key: source.$ref,
+        typeName: source.$ref.typeName,
+        key: source.$ref.key,
         fieldName: info.fieldName,
         fieldArgs: args,
       });
@@ -94,6 +94,12 @@ export function addMocksToSchema({ schema, store, resolvers }: IMockOptions): Gr
     return defaultFieldResolver(source, args, contex, info);
   }
 
+  const typeResolver: GraphQLTypeResolver<any, any> = (data) => {
+    if (isRef(data)) {
+      return data.$ref.typeName;
+    }
+  }
+
   const schemaWithMocks = mapSchema(schema, {
     [MapperKind.OBJECT_FIELD]: (fieldConfig) => {
       return {
@@ -101,6 +107,15 @@ export function addMocksToSchema({ schema, store, resolvers }: IMockOptions): Gr
         resolve: mockResolver,
       };
       },
+      [MapperKind.ABSTRACT_TYPE]: (type) => {
+        if (isUnionType(type)) {
+          return new GraphQLUnionType({
+            ...type.toConfig(),
+            resolveType: typeResolver,
+          });
+        }
+        return type;
+      }
   });
 
   return resolvers ? addResolversToSchema(schemaWithMocks, resolvers) : schemaWithMocks;

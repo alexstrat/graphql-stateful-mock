@@ -107,6 +107,22 @@ const mocks = {
 }
 ```
 
+#### Union types
+If you'd like to provide a mock for an `Union` type, you need to provide the type with an extra `__typename`.
+
+```ts
+const typeDefs = `
+  ...
+  union Result = User | Book
+`;
+const mocks = {
+  Result: () => ({
+    __typename: 'User',
+    name: casual.name(),
+  })
+}
+```
+
 ### Appplying mutations
 
 Use `resolvers` option of `addMocksToSchema` to implement custom resolvers that interact with the store, especially
@@ -155,8 +171,8 @@ Note the sugar signature of `set`:
 store.set('Query', 'ROOT', 'viewer', { name: newName });
 
 // is equivalent to:
-const viewerUserRef = store.get('Query', 'ROOT', `viewer`) as Ref;
-store.set('User', viewerUserRef.$ref, 'name', newName);
+const viewerRef = store.get('Query', 'ROOT', `viewer`) as Ref;
+store.set(viewerRef, 'name', newName);
 ```
 
 ### Handling `*byId` fields
@@ -210,15 +226,13 @@ const schemaWithMocks = addMocksToSchema({
   store,
   resolvers: {
     User: {
-      friends: (parent, { offset, limit }) => {
-        // `addMocksToSchema` resolver will pass a `Ref` as `parent`
-        // it contains a key to the `User` we are dealing with
-        const userKey = src.$ref;
-
+      // `addMocksToSchema` resolver will pass a `Ref` as `parent`
+      // it contains a key to the `User` we are dealing with
+      friends: (userRef, { offset, limit }) => {
         // this will generate and store a list of `Ref`s to some `User`s
         // next time we go thru this resolver (with same parent), the list
         // will be the same
-        const fullList = store.get('User', userKey, 'friends') as Ref[];
+        const fullList = store.get(userRef, 'friends') as Ref[];
 
         // actually apply pagination slicing
         return fullList.slice(offset, offset + limit)
@@ -256,11 +270,9 @@ const schemaWithMocks = addMocksToSchema({
   store,
   resolvers: {
     User: {
-      friends: (parent, { offset, limit }) => {
-        const userKey = src.$ref;
+      friends: (userRef, { offset, limit }) => {
 
-        const connectionRef = store.get('User', userKey, 'friends');
-        const edgesFullList =  store.get('FriendsConnection', connectionRef.$ref, 'edges');
+        const connectionRef = store.get(userRef, 'friends', 'edges');
 
         return {
           totalCount: edgesFullList.length,
@@ -272,7 +284,7 @@ const schemaWithMocks = addMocksToSchema({
 ```
 
 ## Todos and caveats
-- [ ] Implement support for abstract and union types
+- [ ] Implement support for interface type
 - [ ] Add `preserveResolvers` option
 
 ## Related
