@@ -153,10 +153,10 @@ const schemaWithMocks = addMocksToSchema({
         // special singleton types `Query` and `Mutation` will use the key `ROOT`
 
         // this will set the field value for the `User` entity referenced in field
-        // `viewer` of the singleton `Query`
-        store.set('Query', 'ROOT', 'viewer', { name: newName });
+        // `me` of the singleton `Query`
+        store.set('Query', 'ROOT', 'me', { name: newName });
 
-        return store.get('Query', 'ROOT', 'viewer');
+        return store.get('Query', 'ROOT', 'me');
       }
     }
   }
