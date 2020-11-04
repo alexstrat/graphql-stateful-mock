@@ -163,16 +163,16 @@ const schemaWithMocks = addMocksToSchema({
 });
 ```
 
-As a result, any query that queries the field `name` of the `User` referenced in `viewer` will get the updated value.
+As a result, any query that queries the field `name` of the `User` referenced in `me` will get the updated value.
 
 Note the sugar signature of `set`:
 
 ```ts
-store.set('Query', 'ROOT', 'viewer', { name: newName });
+store.set('Query', 'ROOT', 'me', { name: newName });
 
 // is equivalent to:
-const viewerRef = store.get('Query', 'ROOT', `viewer`) as Ref;
-store.set(viewerRef, 'name', newName);
+const meRef = store.get('Query', 'ROOT', `me`) as Ref;
+store.set(meRef, 'name', newName);
 ```
 
 ### Handling `*byId` fields
