@@ -4,7 +4,6 @@ import stringify from 'fast-json-stable-stringify';
 
 import { IMockStore, GetArgs, SetArgs, isRef, assertIsRef, Ref, isRecord, TypePolicy, Mocks, KeyTypeConstraints } from './types';
 import { uuidv4, randomListLength, takeRandom, makeRef } from './utils';
-import { throws } from 'assert';
 
 export const defaultMocks = {
   'Int': () => Math.round(Math.random() * 200) - 100,

@@ -1,13 +1,18 @@
 import { GraphQLSchema, GraphQLFieldResolver, defaultFieldResolver, GraphQLObjectType, GraphQLTypeResolver, isUnionType, GraphQLUnionType, isInterfaceType, GraphQLInterfaceType } from 'graphql';
 import { mapSchema, MapperKind, IResolvers } from '@graphql-tools/utils';
 import { addResolversToSchema } from '@graphql-tools/schema';
-import { isRef, IMockStore, assertIsRef } from './types';
+import { isRef, IMockStore, assertIsRef, Mocks, TypePolicy } from './types';
 import { copyOwnProps, isObject } from './utils';
+import { createMockStore } from '.';
 
 type IMockOptions = {
   schema: GraphQLSchema,
-  store: IMockStore,
-  resolvers?: IResolvers,
+  store?: IMockStore,
+  mocks?: Mocks,
+  typePolicies?: {
+    [typeName: string]: TypePolicy
+  }
+  resolvers?: IResolvers | ((store: IMockStore) => IResolvers);
   /**
    * Set to `true` to prevent existing resolvers from being
    * overwritten to provide mock data. This can be used to mock some parts of the
@@ -77,10 +82,20 @@ type IMockOptions = {
  */
 export function addMocksToSchema({
   schema,
-  store,
-  resolvers,
+  store: maybeStore,
+  mocks,
+  typePolicies,
+  resolvers: resolversOrFnResolvers,
   preserveResolvers = false,
 }: IMockOptions): GraphQLSchema {
+
+  const store = maybeStore || createMockStore({
+    schema,
+    mocks,
+    typePolicies,
+  });
+
+  const resolvers = typeof resolversOrFnResolvers === 'function' ? resolversOrFnResolvers(store) : resolversOrFnResolvers;
 
   const mockResolver:GraphQLFieldResolver<any, any> = (source, args, contex, info) => {
     if (isRef(source)) {
