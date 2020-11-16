@@ -107,8 +107,8 @@ const mocks = {
 }
 ```
 
-#### Union types
-If you'd like to provide a mock for an `Union` type, you need to provide the type with an extra `__typename`.
+#### Abstract types
+If you'd like to provide a mock for an `Union` or `Interface` type, you need to provide the type with an extra `__typename`.
 
 ```ts
 const typeDefs = `
@@ -284,7 +284,6 @@ const schemaWithMocks = addMocksToSchema({
 ```
 
 ## Todos and caveats
-- [ ] Implement support for interface type
 - [ ] Add `preserveResolvers` option
 
 ## Related
