@@ -283,9 +283,6 @@ const schemaWithMocks = addMocksToSchema({
 });
 ```
 
-## Todos and caveats
-- [ ] Add `preserveResolvers` option
-
 ## Related
 - [graphql-tools#1682](https://github.com/ardatan/graphql-tools/issues/1682): [Feature request] Mocking: access generated mock objects for individual queries and mutations.
 - [`fejk-ql`](https://github.com/alepek/fejk-ql): a stateless GraphQL mock with stateful capabilities.
