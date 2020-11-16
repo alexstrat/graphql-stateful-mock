@@ -2,8 +2,6 @@
 
 [![npm version](https://badge.fury.io/js/graphql-stateful-mock.svg)](https://badge.fury.io/js/graphql-stateful-mock)
 
-**🚧 still at proof of concept stage: the API can change**
-
 Mock a GraphQL schema — but in a stateful way.
 
 Very similar to [GraphQL tools mocking](https://www.graphql-tools.com/docs/mocking/) but produce a schema that is:

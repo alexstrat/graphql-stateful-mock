@@ -1,6 +1,6 @@
 {
   "name": "graphql-stateful-mock",
-  "version": "1.0.0-rc5",
+  "version": "1.0.0",
   "description": "Mock a GraphQL schema — but in a stateful way",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
