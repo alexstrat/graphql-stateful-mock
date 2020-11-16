@@ -60,9 +60,7 @@ describe('addMocksToSchema', () => {
         }
       }
       `;
-    const store = createMockStore({ schema });
-
-    const mockedSchema = addMocksToSchema({ schema, store });
+    const mockedSchema = addMocksToSchema({ schema });
     const { data, errors } = await graphql({
       schema: mockedSchema,
       source: query,

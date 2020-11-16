@@ -20,7 +20,7 @@ npm install graphql-stateful-mock -D
 
 ```ts
 import { makeExecutableSchema } from '@graphql-tools/schema';
-import { createMockStore, addMocksToSchema } from 'graphql-stateful-mock';
+import { addMocksToSchema } from 'graphql-stateful-mock';
 import { graphql } from 'graphql';
 
 // Fill this in with the schema string
@@ -29,11 +29,8 @@ const schemaString = `...`;
 // Make a GraphQL schema with no resolvers
 const schema = makeExecutableSchema({ typeDefs: schemaString });
 
-// Create a mocks store for this schema
-const store = createMockStore({ schema });
-
 // Create a new schema with mocks
-const schemaWithMocks = addMocksToSchema({ schema, store });
+const schemaWithMocks = addMocksToSchema({ schema });
 
 const query = `
 query tasksForUser {
@@ -47,11 +44,22 @@ graphql(schemaWithMocks, query).then((result) => console.log('Got result', resul
 graphql(schemaWithMocks, query).then((result) => console.log('Got result 2n time', result));
 ```
 
+Internally, the state is stored in a `MockStore` that user can use to `get` and `set` mocks values. You can initiate the store independently to access it:
+
+```ts
+
+// Create a MockStore for this schema
+const store = createMockStore({ schema });
+
+// Create a new schema with the mock store
+const schemaWithMocks = addMocksToSchema({ schema, store });
+```
+
 ## Recipes
 
 ### Customizing mocks
 
-Use the `mocks` option on `createMockStore` to customize the generated mock values.
+Use the `mocks` option on `addMocksToSchema` to customize the generated mock values.
 
 Define mocks with one function by field:
 
@@ -125,8 +133,7 @@ const mocks = {
 
 ### Appplying mutations
 
-Use `resolvers` option of `addMocksToSchema` to implement custom resolvers that interact with the store, especially
-mutate field value in store.
+Use `resolvers` option of `addMocksToSchema` to implement custom resolvers that interact with the store, especially to mutate field values in store.
 
 
 ```ts
@@ -143,11 +150,9 @@ type Mutation {
 }
 `
 const schema = makeExecutableSchema({ typeDefs: schemaString });
-const store = createMockStore({ schema });
 const schemaWithMocks = addMocksToSchema({
   schema,
-  store,
-  resolvers: {
+  resolvers: (store) => ({
     Mutation: {
       changeMyName: (_, { newName }) => {
         // special singleton types `Query` and `Mutation` will use the key `ROOT`
@@ -159,7 +164,7 @@ const schemaWithMocks = addMocksToSchema({
         return store.get('Query', 'ROOT', 'me');
       }
     }
-  }
+  })
 });
 ```
 
@@ -190,15 +195,14 @@ type Query {
 }
 `
 const schema = makeExecutableSchema({ typeDefs: schemaString });
-const store = createMockStore({ schema });
 const schemaWithMocks = addMocksToSchema({
   schema,
   store,
-  resolvers: {
+  resolvers: (store) => ({
     Query {
       userById(_, { id }) => store.get('User', id),
     }
-  }
+  })
 });
 ```
 
@@ -220,11 +224,10 @@ type Query {
 }
 `
 const schema = makeExecutableSchema({ typeDefs: schemaString });
-const store = createMockStore({ schema });
 const schemaWithMocks = addMocksToSchema({
   schema,
   store,
-  resolvers: {
+  resolvers: (store) => ({
     User: {
       // `addMocksToSchema` resolver will pass a `Ref` as `parent`
       // it contains a key to the `User` we are dealing with
@@ -238,7 +241,7 @@ const schemaWithMocks = addMocksToSchema({
         return fullList.slice(offset, offset + limit)
       }
     }
-  }
+  })
 });
 ```
 
@@ -268,7 +271,7 @@ const store = createMockStore({ schema });
 const schemaWithMocks = addMocksToSchema({
   schema,
   store,
-  resolvers: {
+  resolvers: (store) => ({
     User: {
       friends: (userRef, { offset, limit }) => {
 
@@ -279,12 +282,9 @@ const schemaWithMocks = addMocksToSchema({
           edges: edgesFullList.slice(offset, offset + limit)
       }
     }
-  }
+  })
 });
 ```
-
-## Todos and caveats
-- [ ] Add `preserveResolvers` option
 
 ## Related
 - [graphql-tools#1682](https://github.com/ardatan/graphql-tools/issues/1682): [Feature request] Mocking: access generated mock objects for individual queries and mutations.

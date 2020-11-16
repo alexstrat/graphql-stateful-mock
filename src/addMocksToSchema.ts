@@ -1,12 +1,24 @@
 import { GraphQLSchema, GraphQLFieldResolver, defaultFieldResolver, GraphQLObjectType, GraphQLTypeResolver, isUnionType, GraphQLUnionType, isInterfaceType, GraphQLInterfaceType } from 'graphql';
 import { mapSchema, MapperKind, IResolvers } from '@graphql-tools/utils';
 import { addResolversToSchema } from '@graphql-tools/schema';
-import { isRef, IMockStore, assertIsRef } from './types';
+import { isRef, IMockStore, assertIsRef, Mocks, TypePolicy } from './types';
+import { copyOwnProps, isObject } from './utils';
+import { createMockStore } from '.';
 
 type IMockOptions = {
   schema: GraphQLSchema,
-  store: IMockStore,
-  resolvers?: IResolvers,
+  store?: IMockStore,
+  mocks?: Mocks,
+  typePolicies?: {
+    [typeName: string]: TypePolicy
+  }
+  resolvers?: IResolvers | ((store: IMockStore) => IResolvers);
+  /**
+   * Set to `true` to prevent existing resolvers from being
+   * overwritten to provide mock data. This can be used to mock some parts of the
+   * server and not others.
+   */
+  preserveResolvers?: boolean;
 }
 
 // todo: add option to preserve resolver
@@ -68,7 +80,22 @@ type IMockOptions = {
  * 
  * `Query` and `Mutation` type will use `key` `'ROOT'`. 
  */
-export function addMocksToSchema({ schema, store, resolvers }: IMockOptions): GraphQLSchema {
+export function addMocksToSchema({
+  schema,
+  store: maybeStore,
+  mocks,
+  typePolicies,
+  resolvers: resolversOrFnResolvers,
+  preserveResolvers = false,
+}: IMockOptions): GraphQLSchema {
+
+  const store = maybeStore || createMockStore({
+    schema,
+    mocks,
+    typePolicies,
+  });
+
+  const resolvers = typeof resolversOrFnResolvers === 'function' ? resolversOrFnResolvers(store) : resolversOrFnResolvers;
 
   const mockResolver:GraphQLFieldResolver<any, any> = (source, args, contex, info) => {
     if (isRef(source)) {
@@ -102,12 +129,48 @@ export function addMocksToSchema({ schema, store, resolvers }: IMockOptions): Gr
 
   const schemaWithMocks = mapSchema(schema, {
     [MapperKind.OBJECT_FIELD]: (fieldConfig) => {
+      const oldResolver = fieldConfig.resolve;
+      if (!preserveResolvers || !oldResolver) {
+        return {
+          ...fieldConfig,
+          resolve: mockResolver,
+        };
+      }
       return {
         ...fieldConfig,
-        resolve: mockResolver,
+        resolve: async (rootObject, args, context, info) => {
+          const [mockedValue, resolvedValue] = await Promise.all([
+            mockResolver(rootObject, args, context, info),
+            oldResolver(rootObject, args, context, info),
+          ]);
+
+          // In case we couldn't mock
+          if (mockedValue instanceof Error) {
+            // only if value was not resolved, populate the error.
+            if (undefined === resolvedValue) {
+              throw mockedValue;
+            }
+            return resolvedValue;
+          }
+
+          if (resolvedValue instanceof Date && mockedValue instanceof Date) {
+            return undefined !== resolvedValue ? resolvedValue : mockedValue;
+          }
+
+          if (isObject(mockedValue) && isObject(resolvedValue)) {
+            // Object.assign() won't do here, as we need to all properties, including
+            // the non-enumerable ones and defined using Object.defineProperty
+            const emptyObject = Object.create(Object.getPrototypeOf(resolvedValue));
+            return copyOwnProps(emptyObject, resolvedValue, mockedValue);
+          }
+          return undefined !== resolvedValue ? resolvedValue : mockedValue;
+        },
       };
-      },
+    },
       [MapperKind.ABSTRACT_TYPE]: (type) => {
+        if (preserveResolvers && type.resolveType != null && type.resolveType.length) {
+          return;
+        }
         if (isUnionType(type)) {
           return new GraphQLUnionType({
             ...type.toConfig(),
