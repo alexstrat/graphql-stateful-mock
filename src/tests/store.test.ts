@@ -33,9 +33,27 @@ enum Sex {
   Other
 }
 
+interface Book {
+  id: ID!
+  title: String
+}
+
+type TextBook implements Book {
+  id: ID!
+  title: String
+  text: String
+}
+
+type ColoringBook implements Book {
+  id: ID!
+  title: String
+  colors: [String]
+}
+
 type Query {
   viewer: User!
   userById(id: ID!): User!
+  bookById(id: ID!): Book!
 }
 `;
 
@@ -409,5 +427,50 @@ describe('MockStore', () => {
         expect(store.get(imageRef, 'color')).toEqual('white')
       })
     });
+
+    describe('interface types', () => {
+      it('should work without mocks', () => {
+        const store = createMockStore({ schema });
+
+        const bookRef = store.get('Query', 'ROOT', 'bookById') as Ref;
+
+        expect(['TextBook', 'ColoringBook'].includes(bookRef.$ref.typeName)).toBeTruthy()
+      });
+
+      it('should work with mocks', () => {
+        const store = createMockStore({
+          schema,
+          mocks: {
+            Book: () => {
+              return {
+                __typename: 'TextBook',
+                text: 'long text',
+              }
+            }
+          }
+        });
+
+        const bookRef = store.get('Query', 'ROOT', 'bookById') as Ref;
+
+        expect(bookRef.$ref.typeName).toEqual('TextBook');
+        expect(store.get(bookRef, 'text')).toEqual('long text')
+      });
+
+      it('should let nested sets', () => {
+        const store = createMockStore({ schema });
+
+        store.set('Query', 'ROOT', {
+          bookById: {
+            __typename: 'TextBook',
+            text: 'long text',
+          },
+        });
+        const bookRef = store.get('Query', 'ROOT', 'bookById') as Ref;
+
+        expect(bookRef.$ref.typeName).toEqual('TextBook');
+        expect(store.get(bookRef, 'text')).toEqual('long text')
+      })
+
+    })
   })
 });

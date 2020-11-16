@@ -1,4 +1,4 @@
-import { GraphQLSchema, isObjectType, isScalarType, getNullableType, isListType, GraphQLOutputType, isEnumType, isUnionType, isAbstractType } from 'graphql';
+import { GraphQLSchema, isObjectType, isScalarType, getNullableType, isListType, GraphQLOutputType, isEnumType, isAbstractType, isCompositeType } from 'graphql';
 import { assertIsDefined, isDefined } from 'ts-is-defined';
 import stringify from 'fast-json-stable-stringify';
 
@@ -235,11 +235,11 @@ export class MockStore implements IMockStore{
     const fieldType = getNullableType(this.getFieldType(typeName, fieldName));
     
     // deal with nesting
-    if ((isObjectType(fieldType) || isUnionType(fieldType)) && isDefined(value)) {
+    if (isCompositeType(fieldType) && isDefined(value)) {
       if (!isRecord(value)) throw new Error(`Value to set for ${typeName}.${fieldName} should be an object or null or undefined`);
       assertIsDefined(value, 'Should not be null at this point');
       let joinedTypeName;
-      if (isUnionType(fieldType)) {
+      if (isAbstractType(fieldType)) {
         if (isRef(value)) {
           joinedTypeName = value.$ref.typeName;
         } else {
@@ -258,7 +258,7 @@ export class MockStore implements IMockStore{
           isRef(currentValue) ? { ...currentValue, ...value } : value,
           noOverride
         );
-    } else if (isListType(fieldType) && (isObjectType(getNullableType(fieldType.ofType)) || isUnionType(getNullableType(fieldType.ofType))) && isDefined(value)){
+    } else if (isListType(fieldType) && isCompositeType(getNullableType(fieldType.ofType)) && isDefined(value)){
       if (!Array.isArray(value)) throw new Error(`Value to set for ${typeName}.${fieldName} should be an array or null or undefined`);
 
       const nonNullableItemType = getNullableType(fieldType.ofType);
@@ -269,10 +269,10 @@ export class MockStore implements IMockStore{
 
         // if v is undefined (empty array slot) it means we just want to generate something
         let joinedTypeName;
-        if (isUnionType(nonNullableItemType)) {
+        if (isAbstractType(nonNullableItemType)) {
           if (!v) {
             // no value so no typename => take one randomly
-            joinedTypeName = takeRandom(nonNullableItemType.getTypes().map(t => t.name));
+            joinedTypeName = takeRandom(this.schema.getPossibleTypes(nonNullableItemType).map(t => t.name));
           } else {
             if (isRef(v)) {
               joinedTypeName = v.$ref.typeName;
@@ -398,13 +398,13 @@ export class MockStore implements IMockStore{
       return this.insert(nullableType.name, {});
     } else if (isListType(nullableType)) {
       return [...new Array(randomListLength())].map(() => this.generateValueFromType(nullableType.ofType));
-    } else if (isUnionType(nullableType)) {
+    } else if (isAbstractType(nullableType)) {
       const mock = this.mocks[nullableType.name];
 
       let typeName: string;
       let values: {[key: string]: unknown} = {};
       if (!mock) {
-        typeName = takeRandom(nullableType.getTypes().map(t => t.name));
+        typeName = takeRandom(this.schema.getPossibleTypes(nullableType).map(t => t.name));
       } else if (typeof mock === 'function') {
         const mockRes = mock();
         if (mockRes === null) return null;

@@ -1,4 +1,4 @@
-import { GraphQLSchema, GraphQLFieldResolver, defaultFieldResolver, GraphQLObjectType, GraphQLTypeResolver, isUnionType, GraphQLUnionType } from 'graphql';
+import { GraphQLSchema, GraphQLFieldResolver, defaultFieldResolver, GraphQLObjectType, GraphQLTypeResolver, isUnionType, GraphQLUnionType, isInterfaceType, GraphQLInterfaceType } from 'graphql';
 import { mapSchema, MapperKind, IResolvers } from '@graphql-tools/utils';
 import { addResolversToSchema } from '@graphql-tools/schema';
 import { isRef, IMockStore, assertIsRef } from './types';
@@ -113,8 +113,12 @@ export function addMocksToSchema({ schema, store, resolvers }: IMockOptions): Gr
             ...type.toConfig(),
             resolveType: typeResolver,
           });
+        } else {
+          return new GraphQLInterfaceType({
+            ...type.toConfig(),
+            resolveType: typeResolver,
+          });
         }
-        return type;
       }
   });
 
