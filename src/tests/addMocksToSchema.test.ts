@@ -7,6 +7,7 @@ type User {
   age: Int!
   name: String!
   image: UserImage!
+  book: Book!
 }
 
 union UserImage = UserImageSolidColor | UserImageURL
@@ -17,6 +18,23 @@ type UserImageSolidColor {
 
 type UserImageURL {
   url: String!
+}
+
+interface Book {
+  id: ID!
+  title: String
+}
+
+type TextBook implements Book {
+  id: ID!
+  title: String
+  text: String
+}
+
+type ColoringBook implements Book {
+  id: ID!
+  title: String
+  colors: [String]
 }
 
 type Query {
@@ -153,5 +171,36 @@ describe('addMocksToSchema', () => {
     expect(errors).not.toBeDefined();
     expect(data).toBeDefined();
     expect(data!['viewer']['image']['__typename']).toBeDefined();
-  })
+  });
+
+  it('should handle interface type', async () => {
+    const query = `
+      query {
+        viewer {
+          book {
+            title
+            __typename
+            ... on TextBook {
+              text
+            }
+            ... on ColoringBook {
+              colors
+            }
+          }
+        }
+      }
+      `;
+    const store = createMockStore({ schema });
+
+    const mockedSchema = addMocksToSchema({ schema, store });
+    const { data, errors } = await graphql({
+      schema: mockedSchema,
+      source: query,
+    });
+
+
+    expect(errors).not.toBeDefined();
+    expect(data).toBeDefined();
+    expect(data!['viewer']['book']['__typename']).toBeDefined();
+  });
 });
