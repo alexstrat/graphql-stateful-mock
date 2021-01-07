@@ -1,3 +1,5 @@
+import { GraphQLSchema } from 'graphql';
+
 export type Mocks = {
   [typeOrScalarName: string]:
   (() => { [fieldName: string]: unknown } | unknown)
@@ -63,6 +65,7 @@ export type SetArgs<KeyT extends KeyTypeConstraints = string> = {
 }
 
 export interface IMockStore {
+  schema: GraphQLSchema;
   /**
    * Get a field value from the store for the given type, key and field
    * name — and optionnally field arguments. If the field name is not given,
@@ -194,7 +197,7 @@ export type Ref<KeyT extends KeyTypeConstraints = string> = {
 };
 
 export function isRef<KeyT extends KeyTypeConstraints = string>(maybeRef: unknown): maybeRef is Ref<KeyT> {
-  return maybeRef && typeof maybeRef === 'object' && maybeRef.hasOwnProperty('$ref');
+  return !!maybeRef && typeof maybeRef === 'object' && maybeRef !== null && maybeRef.hasOwnProperty('$ref');
 };
 
 export function assertIsRef<KeyT extends KeyTypeConstraints = string>(maybeRef: unknown, message?: string): asserts maybeRef is Ref<KeyT> {
