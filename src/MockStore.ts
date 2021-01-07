@@ -425,14 +425,7 @@ export class MockStore implements IMockStore{
         throw new Error(`Value returned by the mock for abstract type ${nullableType.name} does not contain any '__typename'`);
       }
 
-      const ref = this.generateValueFromType(this.getType(typeName)) as Ref;
-
-      for (const fieldName of Object.keys(values)) {
-        if (fieldName === '__typename') continue;
-        this.set(ref, fieldName, (values as any)[fieldName]);
-      }
-
-      return ref;
+      return this.insert(typeName, values);
     } else {
       throw new Error(`${nullableType} not implemented`,);
     }
