@@ -20,10 +20,12 @@ type User {
 union UserImage = UserImageSolidColor | UserImageURL
 
 type UserImageSolidColor {
+  id: ID!
   color: String!
 }
 
 type UserImageURL {
+  id: ID!
   url: String!
 }
 
@@ -410,6 +412,25 @@ describe('MockStore', () => {
 
         expect(imageRef.$ref.typeName).toEqual('UserImageSolidColor');
         expect(store.get(imageRef, 'color')).toEqual('white')
+      });
+
+      it('should work with mocks setting the id', () => {
+        const store = createMockStore({
+          schema,
+          mocks: {
+            UserImage: () => {
+              return {
+                id: 'UserImageSolidColor:1234',
+              __typename: 'UserImageSolidColor',
+            }
+          }
+          }
+        });
+  
+        const imageRef = store.get('User', 'me', 'image') as Ref;
+
+        expect(imageRef.$ref.typeName).toEqual('UserImageSolidColor');
+        expect(store.get(imageRef, 'id')).toEqual('UserImageSolidColor:1234')
       });
 
       it('should let nested sets', () => {
