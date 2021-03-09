@@ -1,10 +1,12 @@
+**⚠️ DEPRECATED**: the principles of `graphql-stateful-mock` are now part of [GraphQL Tools mocking](https://www.graphql-tools.com/docs/mocking/) v8. See [graphql-tools#2229](https://github.com/ardatan/graphql-tools/pull/2229).
+
 # graphql-stateful-mock
 
 [![npm version](https://badge.fury.io/js/graphql-stateful-mock.svg)](https://badge.fury.io/js/graphql-stateful-mock)
 
 Mock a GraphQL schema — but in a stateful way.
 
-Very similar to [GraphQL tools mocking](https://www.graphql-tools.com/docs/mocking/) but produce a schema that is:
+Very similar to [GraphQL Tools mocking](https://www.graphql-tools.com/docs/mocking/) but produce a schema that is:
 - **consistent**: the same query with the same arguments will, by default, return the exact same result
 - **mutable**: developer can implement mutations that will modify the results for other queries
 
